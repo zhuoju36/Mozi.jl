@@ -1,9 +1,9 @@
-include("../src/Mozi.jl")
+# include("../src/Mozi.jl")
 
 using Test
 using Logging
 
-using .Mozi
+using Mozi
 
 const PATH=pwd()
 
