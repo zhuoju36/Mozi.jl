@@ -1,0 +1,13 @@
+name = "Mozi"
+uuid = "020a28e0-2de6-11e9-0b1f-7b1c35030455"
+authors = ["HZJ <zhuoju36@hotmail.com>"]
+version = "0.1.0"
+
+[deps]
+HCubature = "19dc6840-f33b-545b-b366-655c7e3ffd49"
+LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
+Logging = "56ddb016-857b-54e1-b83d-db4d58db5568"
+Mmap = "a63ad114-7e13-5084-954f-fe012c677804"
+Printf = "de0858da-6303-5e67-8744-51eddeeeb8d7"
+SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
