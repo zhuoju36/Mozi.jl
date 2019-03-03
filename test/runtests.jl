@@ -15,7 +15,7 @@ include("./static_quad.jl")
 include("./dynamic_quad.jl")
 include("./buckling_quad.jl")
 
-include("./static_p_delta.jl")
+# include("./static_p_delta.jl")
 include("./dynamic_p_delta.jl")
 include("./buckling_p_delta.jl")
 

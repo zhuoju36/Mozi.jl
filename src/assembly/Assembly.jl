@@ -120,7 +120,15 @@ function assemble!(structure,lcset;mass_source="weight",mass_cases=[],mass_cases
         Mᵉ=integrateM!(elm)
 
         A=T*G
-        K+=A'*Kᵉ*A
+
+        rDOF=findall(x->x==true,elm.release)
+        if length(rDOF)!=0
+            K̄ᵉ,P̄ᵉ=FEStructure.FEBeam.static_condensation(Array(elm.Kᵉ),elm.Pᵉ,rDOF)
+            K̄ᵉ=sparse(K̄ᵉ)
+            K+=A'*K̄ᵉ*A
+        else
+            K+=A'*Kᵉ*A
+        end
         M+=A'*Mᵉ*A
     end
 
@@ -196,7 +204,14 @@ function assemble!(structure,lcset;mass_source="weight",mass_cases=[],mass_cases
         J=[6i-5:6i;6j-5:6j]
         G=sparse(I,J,1.0,12,nDOF)
         Pᵉ=integrateP!(elm,load)
-        Pg+=G'*T'*Pᵉ
+
+        rDOF=findall(x->x==true,elm.release)
+        if length(rDOF)!=0
+            K̄ᵉ,P̄ᵉ=FEStructure.FEBeam.static_condensation(Array(elm.Kᵉ),elm.Pᵉ,rDOF)
+            Pg+=G'*T'*P̄ᵉ
+        else
+            Pg+=G'*T'*Pᵉ
+        end
     end
 # @show 5
     #calculate loadcase loads
@@ -216,7 +231,13 @@ function assemble!(structure,lcset;mass_source="weight",mass_cases=[],mass_cases
             J=[6i-5:6i;6j-5:6j]
             G=sparse(I,J,1.0,12,nDOF)
             Pᵉ=integrateP!(elm,load)
-            P+=G'*T'*Pᵉ
+            rDOF=findall(x->x==true,elm.release)
+            if length(rDOF)!=0
+                K̄ᵉ,P̄ᵉ=FEStructure.FEBeam.static_condensation(Array(elm.Kᵉ),elm.Pᵉ,rDOF)
+                Pg+=G'*T'*P̄ᵉ
+            else
+                Pg+=G'*T'*Pᵉ
+            end
         end
 # @show 6
         for load in values(loadcase.nodal_forces)
@@ -245,197 +266,6 @@ function assemble!(structure,lcset;mass_source="weight",mass_cases=[],mass_cases
     end
     return Assembly(structure,lcset,node_count,beam_count,quad_count,
     nDOF,nDOF-length(restrainedDOFs),restrainedDOFs,lc_tree,path)
-end
-
-
-function assemble_cable_link!(assembly)
-    structure=assembly.structure
-    loadcase=assembly.loadcase
-    nDOF=assembly.nDOF
-    K=assembly.K
-    M=assembly.M
-    C=assembly.C
-    P=spzeros(nDOF,1)
-
-    if !assembly.is_assembled #only assemble K & M when the structure it is not yet assembled
-        for elm in structure.beams
-            i = elm.node1.hid
-            j = elm.node2.hid
-            T=sparse(elm.T)
-            G=zeros(12,nDOF)
-            G[1:6,6i-5:6i]=Matrix(1.0I,6,6)
-            G[7:12,6j-5:6j]=Matrix(1.0I,6,6)
-            G=sparse(G)
-            Kᵉ=integrateK!(elm)
-            Mᵉ=integrateM!(elm)
-
-            K+=G'*T'*Kᵉ*T*G
-            M+=G'*T'*Mᵉ*T*G
-        end
-
-        for node in structure.nodes
-            T=node.T
-            spring=T*node.spring
-            mass=T*node.mass
-            res=node.restraints
-            idx=node.hid*6-6
-            for i in 1:6
-                if spring[i]!=0
-                    K[idx+i,idx+i]+=spring[i]
-                end
-                if mass[i]!=0
-                    M[idx+i,idx+i]+=mass[i]
-                end
-            end
-        end
-
-        assembly.K=K
-        assembly.M=M
-        assembly.is_assembled=true
-    end
-
-    if loadcase.gfactor!=0.
-        for elm in structure.cables
-            #load on repeat id will be added together
-            f=[0,0,-loadcase.gfactor*9.81*elm.ρ*elm.A,
-               0,0,-loadcase.gfactor*9.81*elm.ρ*elm.A]
-            T=elm.T
-            fᵉ=T'*f
-            fi1,fi2,fi3,fi1,fi2,fi3=fᵉ
-            add_cable_distributed!(loadcase,elm.id,fi1,fi2,fi3,fi1,fi2,fi3)
-        end
-        for elm in structure.links
-            #load on repeat id will be added together
-            f=[0,0,-loadcase.gfactor*9.81*elm.ρ*elm.A,
-               0,0,-loadcase.gfactor*9.81*elm.ρ*elm.A]
-            T=elm.T
-            fᵉ=T'*f
-            fi1,fi2,fi3,fi1,fi2,fi3=fᵉ
-            add_link_distributed!(loadcase,elm.id,fi1,fi2,fi3,fi1,fi2,fi3)
-        end
-        for elm in structure.beams
-            #load on repeat id will be added together
-            f=[0,0,-loadcase.gfactor*9.81*elm.ρ*elm.A,0,0,0,
-               0,0,-loadcase.gfactor*9.81*elm.ρ*elm.A,0,0,0]
-            T=elm.T
-            fᵉ=T'*f
-            fi1,fi2,fi3,mi1,mi2,mi3,fi1,fi2,fi3,mi1,mi2,mi3=fᵉ
-            add_beam_distributed!(loadcase,elm.id,fi1,fi2,fi3,mi1,mi2,mi3,fi1,fi2,fi3,mi1,mi2,mi3)
-        end
-    end
-
-    for load in loadcase.cable_forces
-        idx=findfirst(x->x.id==load.id,structure.cables)
-        if idx isa Nothing
-            throw("load on an invalid cable with id "*string(load.id)*"!")
-        end
-        elm=structure.cables[idx]
-        i = elm.node1.hid
-        j = elm.node2.hid
-        L=spzeros(6,12)
-        L[1:3,1:3]=Matrix(1.0I,3,3)
-        L[4:6,7:9]=Matrix(1.0I,3,3)
-        T=sparse(L'*elm.T*L)
-        G=spzeros(12,nDOF)
-        G[1:6,6i-5:6i]=Matrix(1.0I,6,6)
-        G[7:12,6j-5:6j]=Matrix(1.0I,6,6)
-        G=sparse(G)
-        Pᵉ=integrateP!(elm,load)
-        P+=G'*T'*Pᵉ
-    end
-
-    for load in loadcase.link_forces
-        idx=findfirst(x->x.id==load.id,structure.links)
-        if idx isa Nothing
-            throw("load on an invalid link with id "*string(load.id)*"!")
-        end
-        elm=structure.links[idx]
-        i = elm.node1.hid
-        j = elm.node2.hid
-        L=spzeros(6,12)
-        L[1:3,1:3]=Matrix(1.0I,3,3)
-        L[4:6,7:9]=Matrix(1.0I,3,3)
-        T=sparse(L'*elm.T*L)
-        G=spzeros(12,nDOF)
-        G[1:6,6i-5:6i]=Matrix(1.0I,6,6)
-        G[7:12,6j-5:6j]=Matrix(1.0I,6,6)
-        G=sparse(G)
-        Pᵉ=integrateP!(elm,load)
-        P+=G'*T'*Pᵉ
-    end
-
-    for load in loadcase.beam_forces
-        idx=findfirst(x->x.id==load.id,structure.beams)
-        if idx isa Nothing
-            throw("load on an invalid beam with id "*string(load.id)*"!")
-        end
-        elm=structure.beams[idx]
-        i = elm.node1.hid
-        j = elm.node2.hid
-        T=sparse(elm.T)
-        G=zeros(12,nDOF)
-        G[1:6,6i-5:6i]=Matrix(1.0I,6,6)
-        G[7:12,6j-5:6j]=Matrix(1.0I,6,6)
-        G=sparse(G)
-        Pᵉ=integrateP!(elm,load)
-        P+=G'*T'*Pᵉ
-    end
-
-    for load in loadcase.nodal_forces
-        idx=findfirst(x->x.id==load.id,structure.nodes)
-        if idx isa Nothing
-            throw("load on an invalid node with id "*string(load.id)*"!")
-        end
-        node=structure.nodes[idx]
-        i = node.hid
-        T=sparse(node.T)
-        G=zeros(6,nDOF)
-        G[1:6,6i-5:6i]=Matrix(1.0I,6,6)
-        G=sparse(G)
-        Pⁿ=reshape(load.val,6,1)
-        P+=G'*T'*Pⁿ
-    end
-
-    assembly.P=P
-
-    #find free nodes
-    all_nodes=Set()
-    beam_nodes=Set()
-    for node in structure.nodes
-        push!(all_nodes,node.hid)
-    end
-    for elm in structure.beams
-        i=elm.node1.hid
-        j=elm.node2.hid
-        push!(beam_nodes,i,j)
-    end
-    free_nodes=collect(setdiff(all_nodes,beam_nodes))
-
-    free_DOFs=[]
-    for hid in free_nodes
-        for i in 1:6
-            push!(free_DOFs,hid*6-6+i)
-        end
-    end
-    for node in structure.nodes
-        idx=node.hid*6-6
-        for r in node.restraints
-            idx+=1
-            if r
-                push!(assembly.restrainedDOFs,idx)
-            end
-        end
-    end
-
-    restrainedDOFs=collect(Set([free_DOFs;assembly.restrainedDOFs]))
-    assembly.restrainedDOFs=[]
-    assembly.K̄=assembly.K
-    assembly.P̄=assembly.P
-    for i in restrainedDOFs
-        assembly.K̄[i,i]+=1e20
-        assembly.P̄[i]+=1e20*assembly.d[i]
-    end
-    return
 end
 
 function clear_result!(assembly)
