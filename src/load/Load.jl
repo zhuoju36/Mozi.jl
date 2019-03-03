@@ -4,8 +4,6 @@ using LinearAlgebra
 using SparseArrays
 using HCubature
 
-import ...CSysModule
-
 export NodalForce,NodalDisp,
 BeamForce,QuadForce
 

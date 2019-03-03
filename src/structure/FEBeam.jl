@@ -4,7 +4,7 @@ using LinearAlgebra
 using SparseArrays
 using HCubature
 
-import ...CSysModule
+using ...CoordinateSystem
 import ..FENode
 
 export Beam
@@ -39,7 +39,7 @@ function Beam(id,hid,node1,node2,material,section)
     else
         pt2=pt2+[0,0,1]
     end
-    csys=CSysModule.CSys(o,pt1,pt2)
+    csys=CSys(o,pt1,pt2)
     T=zeros(12,12)
     T[1:3,1:3]=T[4:6,4:6]=T[7:9,7:9]=T[10:12,10:12]=csys.T
     l=norm(node1.loc-node2.loc)
@@ -142,7 +142,7 @@ function integrateKσ(beam::Beam,σ)::SparseMatrixCSC
 
     rDOF=findall(x->x==true,beam.release)
     if length(rDOF)!=0
-        Kᵉ=sparse(static_condensation(T*l/K,zeros(12),rDOF)[1])
+        Kᵉ=sparse(static_condensation(T/l*K,zeros(12),rDOF)[1])
     else
         Kᵉ=T/l*K
     end

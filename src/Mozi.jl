@@ -1,7 +1,7 @@
 module Mozi
 
 include("./assembly/Enums.jl")
-include("./assembly/Csys.jl")
+include("./assembly/CoordinateSystem.jl")
 include("./structure/FEStructure.jl")
 include("./load/LoadCase.jl")
 include("./assembly/Assembly.jl")

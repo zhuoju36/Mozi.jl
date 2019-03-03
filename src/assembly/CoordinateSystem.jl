@@ -1,8 +1,8 @@
-module CSysModule
+module CoordinateSystem
 
 using LinearAlgebra
 
-export CSys,get_transform_matrix
+export CSys
 
 struct CSys
     O::Array{Float64}
@@ -18,9 +18,9 @@ function CSys(o::Array,p₁::Array,p₂::Array)
     if abs(v₁⋅v₂/BLAS.nrm2(v₁)/BLAS.nrm2(v₂))==1
         error("Two vectors should not be parallel!")
     end
-    x=v₁/BLAS.nrm2(v₁)
+    x=v₁/norm(v₁)
     z=v₁×v₂
-    z=z/BLAS.nrm2(z)
+    z=z/norm(z)
     y=z×x
     T=[reshape(x,1,3);
         reshape(y,1,3);

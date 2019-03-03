@@ -16,14 +16,14 @@ set_modal_params!(lcset,"MODAL",modal_type="eigen")
 
 @info "---------- Time history test ----------"
 
-t=0:1/32:20
-f=sin.(2π*0.5t)
+t=0:1/64:20
+f=sin.(t)
 
 add_static_case!(lcset,"STATIC")
 add_nodal_force!(lcset,"STATIC",2,0,0,-1,0,0,0)
 
 add_time_history_case!(lcset,"DIFF",t,f)
-set_time_history_params!(lcset,"DIFF",0,modal_case="MODAL")
+set_time_history_params!(lcset,"DIFF",0)
 add_nodal_force!(lcset,"DIFF",2,0,0,-1,0,0,0)
 
 add_time_history_case!(lcset,"NEWMARK",t,f)
@@ -31,7 +31,7 @@ add_nodal_force!(lcset,"NEWMARK",2,0,0,-1,0,0,0)
 add_nodal_force!(lcset,"NEWMARK",2,0,0,-1,0,0,0)
 
 add_time_history_case!(lcset,"WILSON",t,f)
-set_time_history_params!(lcset,"WILSON",1,modal_case="MODAL")
+set_time_history_params!(lcset,"WILSON",2)
 add_nodal_force!(lcset,"WILSON",2,0,0,-1,0,0,0)
 
 add_time_history_case!(lcset,"MODALDECOMP",t,f)
@@ -40,8 +40,8 @@ add_nodal_force!(lcset,"MODALDECOMP",2,0,0,-1,0,0,0)
 
 assembly=assemble!(st,lcset,path=PATH)
 solve(assembly)
-# u=restu(assembly,"STATIC",21)
+
 T=result_modal_period(assembly,"MODAL")
 @show T
-u=result_nodal_time_history(assembly,"NEWMARK",2,0,3)
+# u=result_nodal_time_history(assembly,"NEWMARK",2,0,3)
 r=result_nodal_time_history(assembly,"MODALDECOMP",2,0,3)

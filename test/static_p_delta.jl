@@ -1,27 +1,51 @@
+include("../src/Mozi.jl")
+
+using Test
+using Logging
+
+using .Mozi
+
+const PATH=pwd()
+
 @info "---------- P-Δ test ----------"
 st=Structure()
 lcset=LoadCaseSet()
 
 add_uniaxial_metal!(st,"steel",2e11,0.2,7849.0474)
-add_general_section!(st,"frame",4.26e-3,3.301e-6,6.572e-5,9.651e-8,1e-3,1e-3,0,0)
+add_uniaxial_metal!(st,"cable",1.9e11,0.3,7849.0474)
+
+add_beam_section!(st,"frame",3,1500,3000,20000,30000)
+add_beam_section!(st,"string",5,60)
 
 add_node!(st,1,0,0,0)
-add_node!(st,2,18,12,12)
-add_beam!(st,1,1,2,"steel","frame")
+add_node!(st,2,10,0,0)
+add_node!(st,3,10,10,0)
+add_node!(st,4,20,10,0)
+add_node!(st,5,10,0,-5)
+add_node!(st,6,10,10,-5)
+
+add_beam!(st,"b1",1,2,"steel","frame")
+add_beam!(st,"b2",2,3,"steel","frame")
+add_beam!(st,"b3",3,4,"steel","frame")
+add_beam!(st,"c1",1,5,"cable","string")
+add_beam!(st,"c2",5,6,"cable","string")
+add_beam!(st,"c3",6,4,"cable","string")
+set_beam_release!(st,"c1",false,false,false,false,true,true,false,false,false,false,true,true)
 
 set_nodal_restraint!(st,1,true,true,true,true,true,true)
+set_nodal_restraint!(st,6,true,true,true,true,true,true)
 
-add_static_case!(lcset,"DL",0.5)
-add_static_case!(lcset,"DL+SD",0.3,nl_type="2nd",plc="DL")
-add_static_case!(lcset,"DL+SD+LL",0.3,nl_type="2nd",plc="DL+SD")
+add_static_case!(lcset,"D",1)
+add_static_case!(lcset,"D>P",0,nl_type="2nd",plc="D")
+add_static_case!(lcset,"D>P>L",0,nl_type="2nd",plc="D>P")
+
+
+add_beam_distributed!(lcset,"D>P>L","b1",0,0,3000*5,0,0,0,0,0,3000*5,0,0,0)
+add_beam_distributed!(lcset,"D>P>L","b2",0,0,3000*5,0,0,0,0,0,3000*5,0,0,0)
+add_beam_distributed!(lcset,"D>P>L","b3",0,0,3000*5,0,0,0,0,0,3000*5,0,0,0)
 
 assembly=assemble!(st,lcset,path=PATH)
 solve(assembly)
 
-r=result_nodal_displacement(assembly,"DL+SD+LL",2)
-passed=@test r≈[0.454025, 0.302683, -0.98385, -0.0336002, 0.0504003, -5.94366e-13] atol=1e-3
-@show passed
-
-r=result_nodal_reaction(assembly,"DL+SD+LL",1)
-passed=@test r≈[-2.83076e-10,-9.04954e-10,8926.15,53556.9,-80335.3,-3.29473e-8] atol=10
-@show passed
+r=result_nodal_displacement(assembly,"D>P>L",2)
+@show r

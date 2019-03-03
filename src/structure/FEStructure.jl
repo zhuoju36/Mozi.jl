@@ -10,7 +10,7 @@ include("./FETria.jl")
 using SparseArrays
 
 using ..Enums
-using ..CSysModule
+using ..CoordinateSystem
 using .FEMaterial,.FESection
 using .FENode, .FEBeam, .FEQuad
 
@@ -90,7 +90,7 @@ end
 # Arguments
 - `structure`: Structure类型实例
 - `id`: 截面id
-- `sec_type`: 截面类型
+- `sec_type`: 截面类型，1-I形截面，2-H形截面，3-箱形截面，4-圆管，5-实心圆形，6-实心矩形
 - `size1 ～ size8`: 截面尺寸
 """
 function add_beam_section!(structure,id,sec_type,size1=0,size2=0,size3=0,size4=0,size5=0,size6=0,size7=0,size8=0)

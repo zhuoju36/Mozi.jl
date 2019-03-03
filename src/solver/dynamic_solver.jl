@@ -33,13 +33,17 @@ function solve_modal_eigen(structure,loadcase,restrainedDOFs;path=pwd())
     tol=loadcase.tolev
     maxiter=loadcase.maxiterev
 
-    if size(K̄,1)>256
+    if size(K̄,1)>512
         ω²,ϕ=eigs(K̄,M̄,nev=nev,which=:SM,tol=tol,maxiter=maxiter)
     else
-        ω²,ϕ=eigen(Array(K̄),Array(M̄))
-        if ω²[1]>ω²[end]
-            ω²=reverse(ω²)
-            ϕ=reverse(ϕ,dims=2)
+        eig=eigen(Array(K̄),Array(M̄))
+        idx=collect(1:length(eig.values))
+        sort!(idx,by=x->eig.values[x])
+        ω²=zero(eig.values)
+        ϕ=zero(eig.vectors)
+        for i in 1:length(idx)
+            ω²[i]=eig.values[idx[i]]
+            ϕ[:,i]=eig.vectors[:,idx[i]]
         end
         ω²,ϕ=ω²[1:nev],ϕ[:,1:nev]
     end
@@ -197,12 +201,12 @@ function solve_wilson_theta(structure,loadcase,restrainedDOFs;path=pwd())
         Q̂=Q̄[:,t+1]+M̄*(b₁*ū[:,t]+b₂*v̄[:,t]+b₃*ā[:,t])+C̄*(b₄*ū[:,t]+b₅*v̄[:,t]+b₆*ā[:,t])
         Q̂=reshape(Q̂,length(Q̂))
         ū[:,t+1]=Pardiso.solve(ps,K̂,Q̂) #May LDLT here
-        v̄[:,t+1]=b₄*(u[:,t+1]-u[:,t])+b₅*v[:,t]+b₆*a[:,t]
-        ā[:,t+1]=b₁*(u[:,t+1]-u[:,t])+b₂*v[:,t]+b₃*a[:,t]
+        v̄[:,t+1]=b₄*(ū[:,t+1]-ū[:,t])+b₅*v̄[:,t]+b₆*ā[:,t]
+        ā[:,t+1]=b₁*(ū[:,t+1]-ū[:,t])+b₂*v̄[:,t]+b₃*ā[:,t]
 
         ā[:,t+1]=ā[:,t]+1/θ*(ā[:,t+1]-ā[:,t])
         v̄[:,t+1]=v̄[:,t]+((1-γ)*ā[:,t]+γ*ā[:,t+1])*Δt
-        u[:,t+1]=ū[:,t]+v̄[:,t]*Δt
+        ū[:,t+1]=ū[:,t]+v̄[:,t]*Δt
     end
     @info "------------------------------ 求解完成 ------------------------------"
 
@@ -328,8 +332,6 @@ function solve_central_diff(structure,loadcase,restrainedDOFs;path=pwd(),Δtcr=0
     end
     return u,v,a
 end
-
-
 
 function solve_response_spectrum(structure,loadcase,restrainedDOFs;path=pwd())
     modal_case=loadcase.modal_case

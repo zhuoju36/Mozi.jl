@@ -24,4 +24,36 @@ end
     UNIAXIAL_METAL
 end
 
+@enum MassSource begin
+    WEIGHT
+    LOAD
+end
+
+@enum MassMatrixType begin
+    CONCENTRATED
+    COORDINATED
+end
+
+@enum DampType begin
+    CONSTANT
+    RAYLEIGH
+end
+
+@enum DynamicAlgorithm begin
+    CENTRAL_DIFF
+    NEWMARK_THETA
+    WILSON_BETA
+    MODOL_DECOMP
+end
+
+@enum ModalType begin
+    EIGEN
+    RITZ
+end
+
+@enum RefCSys begin
+    GLOBAL
+    LOCAL
+end
+
 end

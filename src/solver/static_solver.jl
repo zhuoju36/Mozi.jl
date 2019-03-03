@@ -45,16 +45,19 @@ function calc_Kσ(structure,d₀)
         i = elm.node1.hid
         j = elm.node2.hid
         T=sparse(elm.T)
-        G=zeros(12,nDOF)
-        G[1:6,6i-5:6i]=Matrix(1.0I,6,6)
-        G[7:12,6j-5:6j]=Matrix(1.0I,6,6)
-        G=sparse(G)
+
+        I=collect(1:12)
+        J=[6i-5:6i;6j-5:6j]
+        G=sparse(I,J,1.0,12,nDOF)
+
         T=sparse(elm.T)
         dᵉ=T*[d₀[i*6-5:i*6];d₀[j*6-5:j*6]]
         Kᵉ=integrateK!(elm)
         σ=(Kᵉ*dᵉ)[1]
         Kσᵉ=integrateKσ(elm,σ)
-        Kσ+=G'*T'*Kσᵉ*T*G
+
+        A=T*G
+        Kσ+=A'*Kσᵉ*A
     end
     return Kσ
 end

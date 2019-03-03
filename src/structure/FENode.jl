@@ -1,6 +1,6 @@
 module FENode
 
-import ...CSysModule
+using ...CoordinateSystem
 using LinearAlgebra
 using SparseArrays
 
@@ -20,7 +20,7 @@ function Node(id,hid::Int,x::Float64,y::Float64,z::Float64)
     o=[x,y,z]
     pt1=[x,y,z]+[1,0,0]
     pt2=[x,y,z]+[0,1,0]
-    csys=CSysModule.CSys(o,pt1,pt2)
+    csys=CSys(o,pt1,pt2)
     T=zeros(6,6)
     T[1:3,1:3]=T[4:6,4:6]=csys.T
     restraints=[false,false,false,false,false,false]

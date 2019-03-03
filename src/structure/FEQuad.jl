@@ -6,7 +6,7 @@ using Logging
 
 using HCubature
 
-import ...CSysModule
+using ...CoordinateSystem
 import ..FENode
 
 export Quad
@@ -41,7 +41,7 @@ function Quad(id,hid,node1,node2,node3,node4,material,t;membrane=true,bending=tr
     o=(node1.loc+node2.loc+node3.loc+node4.loc)/4
     pt1 = node1.loc+node2.loc
     pt2 = node2.loc+node3.loc
-    csys = CSysModule.CSys(o, pt1, pt2)
+    csys = CSys(o, pt1, pt2)
 
     vertices=[n.loc for n in (node1,node2,node3,node4)]
     #check aspect ratio
@@ -411,7 +411,7 @@ function integrateKσ(elm::Quad,σ)
     n4=node4.loc+[u[7];u[8];0]
     pt1 = n1+n2
     pt2 = n2+n3
-    csys = CSysModule.CSys(o, pt1, pt2)
+    csys = CSys(o, pt1, pt2)
     V=csys.T
     T̄ᵉ=zeros(8,8)
     T̄ᵉ[1:2,1:2]=V
@@ -458,7 +458,7 @@ function integrateKu(elm::Quad,u)
     n4=node4.loc+[u[7];u[8];0]
     pt1 = n1+n2
     pt2 = n2+n3
-    csys = CSysModule.CSys(o, pt1, pt2)
+    csys = CSys(o, pt1, pt2)
     V=csys.T
     T̄ᵉ=zeros(8,8)
     T̄ᵉ[1:2,1:2]=V
