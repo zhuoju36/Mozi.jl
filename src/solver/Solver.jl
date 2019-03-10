@@ -1,5 +1,7 @@
 module Solver
 
+const USE_PARDISO=false
+
 include("./static_solver.jl")
 include("./dynamic_solver.jl")
 
@@ -81,20 +83,6 @@ function solve_case(structure,loadcase,restrainedDOFs,path)
     elseif is_response_spectrum(loadcase)
     end
 end
-
-# node7=LCNode(7,[])
-# node4=LCNode(4,[])
-# node3=LCNode(3,[])
-# node6=LCNode(6,[])
-#
-# node2=LCNode(2,[node3,node4])
-# node5=LCNode(5,[node6,node7])
-#
-# node1=LCNode(1,[node2])
-#
-# root=LCNode(0,[node1,node5])
-#
-# DFSsolve(root)
 
 """
     solve(assembly,run="all",path=pwd())

@@ -1,11 +1,11 @@
-# include("../src/Mozi.jl")
-
-using Test
-using Logging
-
-using Mozi
-
-const PATH=pwd()
+# # include("../src/Mozi.jl")
+#
+# using Test
+# using Logging
+#
+# using Mozi
+#
+# const PATH=pwd()
 
 @info "---------- P-Δ test ----------"
 st=Structure()

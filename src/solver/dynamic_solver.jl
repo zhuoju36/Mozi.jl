@@ -3,14 +3,12 @@ using LinearAlgebra
 using SparseArrays
 
 using HCubature
-import Pardiso
 using Arpack
 using DSP
 
-# using Pardiso
-# using CombinationModule
-
-# export solve_linear_eigen,solve_linear_Ritz
+if USE_PARDISO
+    import Pardiso
+end
 
 include("../util/numeric.jl")
 
@@ -77,13 +75,22 @@ function solve_modal_Ritz(structure,loadcase,restrainedDOFs;path=pwd())
     maxiter=loadcase.maxiterev
 
     X=zeros(length(F̄),nev)
-    ps=Pardiso.MKLPardisoSolver()
-    Pardiso.set_matrixtype!(ps,1) #实对称矩阵
-    x̂=Pardiso.solve(ps,K̄,F̄)
+    if USE_PARDISO
+        ps=Pardiso.MKLPardisoSolver()
+        Pardiso.set_matrixtype!(ps,1) #实对称矩阵
+        x̂=Pardiso.solve(ps,K̄,F̄)
+        x̂=Pardiso.solve(ps,K̄,F̄)
+    else
+        x̂=Symmetric(K̄) \ F̄
+    end
     β=sqrt(x̂'*M̄*x̂)
     X[:,1]=x̂/β
     for i in 2:nev
-        x̃=Pardiso.solve(ps,K̄,Array(M̄*X[:,i-1]))
+        if USE_PARDISO
+            x̃=Pardiso.solve(ps,K̄,Array(M̄*X[:,i-1]))
+        else
+            x̃=Symmetric(K̄) \ Array(M̄*X[:,i-1])
+        end
         x̂=copy(x̃)
         for j in 1:i-1
             α=x̃'*M̄*X[:,j]
@@ -132,16 +139,23 @@ function solve_newmark_beta(structure,loadcase,restrainedDOFs;path=pwd())
     ā=Array{Float64,2}(undef,length(v₀),length(T))
     ū[:,1]=u₀
     v̄[:,1]=v₀
-
-    ps=Pardiso.MKLPardisoSolver()
-    Pardiso.set_matrixtype!(ps,1)
-    a₀=Pardiso.solve(ps,M̄,(Q̄[:,1]-C̄*v₀-K̄*u₀)[:,1])
+    if USE_PARDISO
+        ps=Pardiso.MKLPardisoSolver()
+        Pardiso.set_matrixtype!(ps,1)
+        a₀=Pardiso.solve(ps,M̄,(Q̄[:,1]-C̄*v₀-K̄*u₀)[:,1])
+    else
+        a₀=Symmetric(M̄) \ (Q̄[:,1]-C̄*v₀-K̄*u₀)[:,1]
+    end
 
     ā[:,1]=a₀
     for t in 1:length(T)-1
         Q̂=Q̄[:,t+1]+M̄*(c₀*ū[:,t]+c₂*v̄[:,t]+c₃*ā[:,t])+C̄*(c₁*ū[:,t]+c₄*v̄[:,t]+c₅*ā[:,t])
         Q̂=reshape(Q̂,length(Q̂))
-        ū[:,t+1]=Pardiso.solve(ps,K̂,Q̂) #May LDLT here
+        if USE_PARDISO
+            ū[:,t+1]=Pardiso.solve(ps,K̂,Q̂) #May LDLT here
+        else
+            ū[:,t+1]=Symmetric(K̂) \ Q̂
+        end
         ā[:,t+1]=c₀*(ū[:,t+1]-ū[:,t])-c₂*v̄[:,t]-c₃*ā[:,t]
         v̄[:,t+1]=v̄[:,t]+c₆*ā[:,t]+c₇*ā[:,t+1]
     end
@@ -192,15 +206,23 @@ function solve_wilson_theta(structure,loadcase,restrainedDOFs;path=pwd())
     ū[:,1]=u₀
     v̄[:,1]=v₀
 
-    ps=Pardiso.MKLPardisoSolver()
-    Pardiso.set_matrixtype!(ps,1)
-    a₀=Pardiso.solve(ps,M̄,(Q̄[:,1]-C̄*v₀-K̄*u₀)[:,1])
+    if USE_PARDISO
+        ps=Pardiso.MKLPardisoSolver()
+        Pardiso.set_matrixtype!(ps,1)
+        a₀=Pardiso.solve(ps,M̄,(Q̄[:,1]-C̄*v₀-K̄*u₀)[:,1])
+    else
+        a₀=Symmetric(M̄) \ (Q̄[:,1]-C̄*v₀-K̄*u₀)[:,1]
+    end
 
     ā[:,1]=a₀
     for t in 1:length(T)-1
         Q̂=Q̄[:,t+1]+M̄*(b₁*ū[:,t]+b₂*v̄[:,t]+b₃*ā[:,t])+C̄*(b₄*ū[:,t]+b₅*v̄[:,t]+b₆*ā[:,t])
         Q̂=reshape(Q̂,length(Q̂))
-        ū[:,t+1]=Pardiso.solve(ps,K̂,Q̂) #May LDLT here
+        if USE_PARDISO
+            ū[:,t+1]=Pardiso.solve(ps,K̂,Q̂) #May LDLT here
+        else
+            ū[:,t+1]=Symmetric(K̂) \ Q̂
+        end
         v̄[:,t+1]=b₄*(ū[:,t+1]-ū[:,t])+b₅*v̄[:,t]+b₆*ā[:,t]
         ā[:,t+1]=b₁*(ū[:,t+1]-ū[:,t])+b₂*v̄[:,t]+b₃*ā[:,t]
 
@@ -312,11 +334,17 @@ function solve_central_diff(structure,loadcase,restrainedDOFs;path=pwd(),Δtcr=0
     M̂=c₀*M̄+c₁*C̄
 
     LDLᵀ=ldlt(Symmetric(M̂))
-    ps=Pardiso.MKLPardisoSolver()
-    Pardiso.set_matrixtype!(ps,1)
+    if USE_PARDISO
+        ps=Pardiso.MKLPardisoSolver()
+        Pardiso.set_matrixtype!(ps,1)
+    end
     for t in 2:length(T)
         Q̂=Q̄[:,t]-(K̄-c₂*M̄)*ū[:,t]-(c₀*M̄-c₁*C̄)*ū[:,t-1]
-        ū[:,t+1]=Pardiso.solve(ps,M̂,Q̂)
+        if USE_PARDISO
+            ū[:,t+1]=Pardiso.solve(ps,M̂,Q̂)
+        else
+            ū[:,t+1]=Symmetric(M̂) \ Q̂
+        end
         v̄[:,t]=c₁*(-ū[:,t-1]+ū[:,t+1])
         ā[:,t]=c₀*(ū[:,t-1]-2*ū[:,t]+ū[:,t+1])
     end
