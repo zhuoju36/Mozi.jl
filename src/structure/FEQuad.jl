@@ -36,7 +36,7 @@ mutable struct Quad
     Mᵉ::SparseMatrixCSC{Float64}
 end
 
-function Quad(id,hid,node1,node2,node3,node4,material,t;membrane=true,bending=true)
+function Quad(id,hid,node1,node2,node3,node4,material,t,membrane=true,bending=true)
     #Initialize local CSys,could be optimized by using a MSE plane
     o=(node1.loc+node2.loc+node3.loc+node4.loc)/4
     pt1 = node1.loc+node2.loc
@@ -91,12 +91,9 @@ function Quad(id,hid,node1,node2,node3,node4,material,t;membrane=true,bending=tr
     A+=0.5*det([[1;1;1] node4.loc-node2.loc node3.loc-node2.loc]')
     A/=4
 
-    E=material.E
-    ν=material.ν
-
     #3D to local 2D
     T=zeros(24,24)
-    for i in 8
+    for i in 1:8
         T[3i-2:3i,3i-2:3i]=csys.T
     end
     T=sparse(T)
@@ -195,10 +192,9 @@ function integrateKm!(elm)
         J[1,2]=(-1/4)*(1 - η)*y₂ + (1/4)*(1 - η)*y₃ + (-1/4)*(1 + η)*y₂ + (1/4)*(1 + η)*y₄
         J[2,1]=(-1/4)*(1 - ξ)*x₁ + (1/4)*(1 - ξ)*x₂ + (-1/4)*(1 + ξ)*x₃ + (1/4)*(1 + ξ)*x₄
         J[2,2]=(-1/4)*(1 + ξ)*y₃ + (1/4)*(1 + ξ)*y₄
-
         return K*det(J)*t
     end
-    elm.Kmᵉ=sparse(hcubature(BtDB,[-1,1],[1,1])[1])
+    elm.Kmᵉ=sparse(hcubature(BtDB,[-1,-1],[1,1])[1])
 end
 
 function integrateKb!(elm)
@@ -369,7 +365,7 @@ function integrateKb!(elm)
 
         return K*det(J)
     end
-    elm.Kbᵉ=sparse(hcubature(BtDB,[-1,1],[1,1])[1])
+    elm.Kbᵉ=sparse(hcubature(BtDB,[-1,-1],[1,1])[1])
 end
 
 function integrateK!(elm::Quad)

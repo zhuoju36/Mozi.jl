@@ -327,7 +327,7 @@ end
 - `mat_id`: 材料id
 - `t`: 截面厚度
 """
-function add_quad!(structure,id,i,j,k,l,mat_id,t)
+function add_quad!(structure,id,i,j,k,l,mat_id,t;membrane=true,plate=true)
     id=string(id)
     hid=length(structure.quads)+1
     if id in keys(structure.quads)
@@ -347,7 +347,7 @@ function add_quad!(structure,id,i,j,k,l,mat_id,t)
     node3=structure.nodes[k]
     node4=structure.nodes[l]
     material=structure.materials[mat_id]
-    quad=Quad(id,hid,node1,node2,node3,node4,material,t)
+    quad=Quad(id,hid,node1,node2,node3,node4,material,t,membrane,plate)
     structure.quads[id]=quad
 end
 
