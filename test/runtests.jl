@@ -3,7 +3,7 @@
 using Test
 using Logging
 
-# using .Mozi
+using Mozi
 
 const PATH=pwd()
 
