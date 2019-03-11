@@ -2,10 +2,13 @@ using LinearAlgebra
 using SparseArrays
 using Logging
 
-import Pardiso
 using Arpack
 
 using ..FEStructure
+
+if USE_PARDISO
+    import Pardiso
+end
 
 export solve_linear_static,solve_linear_eigen
 
@@ -73,9 +76,13 @@ function solve_linear_static(structure,loadcase,restrainedDOFs)
     K̄=introduce_BC(structure.K,restrainedDOFs)
     P̄=introduce_BC(loadcase.P,restrainedDOFs)
 
-    ps=Pardiso.MKLPardisoSolver()
-    Pardiso.set_matrixtype!(ps,1) #实对称矩阵
-    ū=Pardiso.solve(ps,K̄,P̄)
+    if USE_PARDISO
+        ps=Pardiso.MKLPardisoSolver()
+        Pardiso.set_matrixtype!(ps,1) #实对称矩阵
+        ū=Pardiso.solve(ps,K̄,P̄)
+    else
+        ū=Symmetric(K̄) \ P̄
+    end
 
     u=resolve_BC(ū,restrainedDOFs)
 
@@ -128,17 +135,21 @@ function solve_2nd_static(structure,loadcase,restrainedDOFs;conv_tol=1e-16,steps
     F̄=zero(ū)
     # @info "initial" F[12]
 
-    ps=Pardiso.MKLPardisoSolver()
-    Pardiso.set_matrixtype!(ps,1) #实对称矩阵
+    if USE_PARDISO
+        ps=Pardiso.MKLPardisoSolver()
+        Pardiso.set_matrixtype!(ps,1) #实对称矩阵
+    end
 
     for step in 1:steps #等荷载增量
         Q̄=P̄*step/steps
         iter=0
         while true
             ΔQ̄=Q̄-F̄ #当前子步不平衡力
-
-            Δū=Pardiso.solve(ps,K̄,ΔQ̄)  #线性求解子步增量位移
-
+            if USE_PARDISO
+                Δū=Pardiso.solve(ps,K̄,ΔQ̄)  #线性求解子步增量位移
+            else
+                Δū=Symmetric(K̄)\ΔQ̄
+            end
             Δu=resolve_BC(Δū,restrainedDOFs)
             ū+=Δū
             u=resolve_BC(ū,restrainedDOFs) #T.L格式，相对零位形

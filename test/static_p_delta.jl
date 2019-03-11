@@ -1,11 +1,11 @@
-include("../src/Mozi.jl")
-
-using Test
-using Logging
-
-using .Mozi
-
-const PATH=pwd()
+# # include("../src/Mozi.jl")
+#
+# using Test
+# using Logging
+#
+# using Mozi
+#
+# const PATH=pwd()
 
 @info "---------- P-Δ test ----------"
 st=Structure()
@@ -46,7 +46,10 @@ add_static_case!(lcset,"D",1)
 add_static_case!(lcset,"D>P",0,nl_type="2nd",plc="D")
 add_static_case!(lcset,"D>P>L",0,nl_type="2nd",plc="D>P")
 
+<<<<<<< HEAD
 add_beam_strain!(lcset,"D>P","c3",-0.03)
+=======
+>>>>>>> 1a154633be53b0a896f9ddcb667a2523fc6436dd
 add_beam_distributed!(lcset,"D>P>L","b1",0,0,3000*5,0,0,0,0,0,3000*5,0,0,0)
 add_beam_distributed!(lcset,"D>P>L","b2",0,0,3000*5,0,0,0,0,0,3000*5,0,0,0)
 add_beam_distributed!(lcset,"D>P>L","b3",0,0,3000*5,0,0,0,0,0,3000*5,0,0,0)

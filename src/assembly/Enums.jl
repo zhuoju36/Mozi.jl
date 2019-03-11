@@ -1,5 +1,10 @@
 module Enums
 export SectionType,MaterialType,LoadCaseType
+
+@enum SparseSolver begin
+    USE_PARDISO
+end
+
 @enum SectionType begin
     GENERAL_SECTION=0
     ISECTION=1

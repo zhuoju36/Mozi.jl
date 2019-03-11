@@ -1,9 +1,9 @@
-include("../src/Mozi.jl")
+# include("../src/Mozi.jl")
 
 using Test
 using Logging
 
-using .Mozi
+# using .Mozi
 
 const PATH=pwd()
 
@@ -11,6 +11,7 @@ include("./static_cantilever.jl")
 include("./dynamic_cantilever.jl")
 include("./buckling_cantilever.jl")
 
+<<<<<<< HEAD
 include("./static_quad.jl")
 include("./dynamic_quad.jl")
 include("./buckling_quad.jl")
@@ -22,6 +23,19 @@ include("./buckling_p_delta.jl")
 include("./static_large_deform.jl")
 include("./dynamic_large_deform.jl")
 include("./buckling_large_deform.jl")
+=======
+# include("./static_quad.jl")
+# include("./dynamic_quad.jl")
+# include("./buckling_quad.jl")
+
+# include("./static_p_delta.jl")
+# include("./dynamic_p_delta.jl")
+# include("./buckling_p_delta.jl")
+#
+# include("./static_large_deform.jl")
+# include("./dynamic_large_deform.jl")
+# include("./buckling_large_deform.jl")
+>>>>>>> 1a154633be53b0a896f9ddcb667a2523fc6436dd
 
 include("./dynamic_cantilever.jl")
 cdiff=result_nodal_time_history(assembly,"DIFF",2,0,3)
