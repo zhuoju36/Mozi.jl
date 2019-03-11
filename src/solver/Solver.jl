@@ -1,6 +1,6 @@
 module Solver
 
-const USE_PARDISO=false
+const USE_PARDISO=true
 
 include("./static_solver.jl")
 include("./dynamic_solver.jl")
