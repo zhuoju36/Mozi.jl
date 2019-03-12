@@ -459,17 +459,19 @@ end
 - `id`: 单元id
 - `val`: 应变值
 """
-function add_beam_strain!(lcset::LoadCaseSet,lc,val)
+function add_beam_strain!(lcset::LoadCaseSet,lc,id,val)
     lc=string(lc)
     if !(lc in keys(lcset.statics))
         throw("load case with id "*lc*" doesn't exists!")
     end
-    if !(id in keys(lcset.cases[lc].beamforces))
+    if !(id in keys(lcset.statics[lc].beam_forces))
         beam_force=BeamForce(id)
-        beam_force.s=val
+        beam_force.s[1]=val
+        beam_force.s[7]=val
         lcset.statics[lc].beam_forces[id]=beam_force
     else
-        lcset.statics[lc].beam_forces[id].s+=val
+        lcset.statics[lc].beam_forces[id].s[1]+=val
+        lcset.statics[lc].beam_forces[id].s[7]+=val
     end
 end
 

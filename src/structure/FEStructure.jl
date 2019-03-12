@@ -265,10 +265,10 @@ function add_beam!(structure,id,i,j,mat_id,sec_id)
         throw("node with id "*string(j)*" doesn't exist!")
     end
     if !(mat_id in keys(structure.materials))
-        throw("material with id "*string(j)*" doesn't exist!")
+        throw("material with id "*string(mat_id)*" doesn't exist!")
     end
     if !(sec_id in keys(structure.sections))
-        throw("section with id "*string(j)*" doesn't exist!")
+        throw("section with id "*string(sec_id)*" doesn't exist!")
     end
     node1=structure.nodes[i]
     node2=structure.nodes[j]

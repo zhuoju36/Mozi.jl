@@ -7,7 +7,7 @@ using HCubature
 using ...CoordinateSystem
 import ..FENode
 
-export Beam
+export Beam,static_condensation
 
 mutable struct Beam
     id::String
@@ -21,9 +21,9 @@ mutable struct Beam
 
     l::Float64
     T::Matrix{Float64} #transform_matrix
-    K̄ᵉ::SparseMatrixCSC{Float64}
-    M̄ᵉ::SparseMatrixCSC{Float64}
-    P̄ᵉ::SparseMatrixCSC{Float64}
+    K̄ᵉ::SparseMatrixCSC{Float64}#condensed
+    M̄ᵉ::SparseMatrixCSC{Float64}#condensed
+    P̄ᵉ::SparseMatrixCSC{Float64}#condensed
     Kᵉ::SparseMatrixCSC{Float64}
     Mᵉ::SparseMatrixCSC{Float64}
     Pᵉ::SparseMatrixCSC{Float64}
@@ -92,13 +92,7 @@ function integrateK!(beam::Beam)::SparseMatrixCSC
 
     K[2,12]=K[12,2]=6E*I₃/l^2/(1+ϕ₂)
 
-    beam.K̄ᵉ=K
-    rDOF=findall(x->x==true,beam.release)
-    if length(rDOF)!=0
-        beam.Kᵉ=sparse(static_condensation(K,zeros(12),rDOF)[1])
-    else
-        beam.Kᵉ=K
-    end
+    beam.Kᵉ=K
     return sparse(beam.Kᵉ)
 end
 
@@ -140,12 +134,7 @@ function integrateKσ(beam::Beam,σ)::SparseMatrixCSC
 
     K[2,12]=K[12,2]=(l/10)/(1+ϕ₂)^2
 
-    rDOF=findall(x->x==true,beam.release)
-    if length(rDOF)!=0
-        Kᵉ=sparse(static_condensation(T/l*K,zeros(12),rDOF)[1])
-    else
-        Kᵉ=T/l*K
-    end
+    Kᵉ=T/l*K
     return sparse(Kᵉ)
 end
 
@@ -177,15 +166,9 @@ function static_condensation(K,P,rDOF)
     Kᶜ=zero(K)
     Pᶜ=zero(P)
     Kᶜ[i,i]=Kᵢᵢ-Kᵢⱼ*Kⱼⱼ⁻¹*Kⱼᵢ
-    # Kᶜ[i,j].=0
-    # Kᶜ[i,j].=0
-    # Kᶜ[j,j].=0
-
     Pᶜ[i]=Pᵢ-Kᵢⱼ*Kⱼⱼ⁻¹*Pⱼ
-    # Pᶜ[j].=0
     return Kᶜ,Pᶜ
 end
-
 
 function integrateM!(beam::Beam)
     E,ν=beam.material.E,beam.material.ν
@@ -246,14 +229,8 @@ function calc_force(beam,beamforce)
 end
 
 function integrateP!(beam::Beam,beam_force)
-    Pᵉ_f,Pᵉ_s,Pᵉ_σ₀,Pᵉ_ϵ₀=calc_force(beam,beam_force) #Pᵉ=Pᵉf+Pᵉs+Pᵉσ₀+Pᵉϵ₀
-    beam.P̄ᵉ=Pᵉ_f+Pᵉ_s+Pᵉ_σ₀+Pᵉ_ϵ₀
-    rDOF=findall(x->x==true,beam.release)
-    if length(rDOF)!=0
-        beam.Pᵉ=sparse(static_condensation(Array(beam.K̄ᵉ),Array(beam.P̄ᵉ),rDOF)[2])
-    else
-        beam.Pᵉ=beam.P̄ᵉ
-    end
+    Pfᵉ,Psᵉ,Pσ₀ᵉ,Pϵ₀ᵉ=calc_force(beam,beam_force) #Pᵉ=Pᵉf+Pᵉs+Pᵉσ₀+Pᵉϵ₀
+    beam.Pᵉ=Pfᵉ+Psᵉ+Pσ₀ᵉ+Pϵ₀ᵉ
     return beam.Pᵉ
 end
 

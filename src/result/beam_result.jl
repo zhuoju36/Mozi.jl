@@ -1,4 +1,4 @@
-import ..FEStructure.FEBeam
+using ..FEStructure.FEBeam
 """
     result_beam_force(assembly,lc_id,beam_id)
 读取已求解的assembly实例的单个beam单元内力
@@ -27,8 +27,14 @@ function result_beam_force(assembly,lc_id,beam_id)
     u=read_vector(path*"/.analysis",lc_id*"_u.v")
     T=elm.T
     uᵉ=T*[d[iDOFs];u[jDOFs]]
-    Kᵉ=integrateK(elm)
-    return Kᵉ*uᵉ
+
+    rDOF=findall(x->x==true,elm.release)
+    if length(rDOF)!=0
+        K̄ᵉ,P̄ᵉ=static_condensation(Array(elm.Kᵉ),zeros(12),rDOF)
+        return K̄ᵉ*uᵉ
+    else
+        return Kᵉ*uᵉ
+    end
 end
 
 """
@@ -62,13 +68,11 @@ function result_beam_displacement(assembly,lc_id,beam_id)
         Pᵉ=zeros(12)
     else
         force=loadcase.beam_forces[beam_id]
-        Pᵉ=BeamModule.integrateP!(elm,force)
+        Pᵉ=FEBeam.integrateP!(elm,force)
     end
     T=elm.T
     uᵉ=T*[u[iDOFs];u[jDOFs]]
-    Kᵉ=elm.Kᵉ
-    K̄ᵉ=Array(elm.K̄ᵉ)
-
+    K̄ᵉ=Array(elm.Kᵉ)
     i=.!elm.release
     j=elm.release
     Kᵢᵢ=K̄ᵉ[i,i]
@@ -113,9 +117,7 @@ function result_beam_displacement(assembly,lc_id)
         end
         T=elm.T
         uᵉ=T*[u[iDOFs];u[jDOFs]]
-        Kᵉ=elm.Kᵉ
-        K̄ᵉ=Array(elm.K̄ᵉ)
-
+        K̄ᵉ=Array(elm.Kᵉ)
         i=.!elm.release
         j=elm.release
         Kᵢᵢ=K̄ᵉ[i,i]
@@ -133,8 +135,6 @@ end
 
 function result_element()
     Δdᵉ=(elm.T)'*[Δd[6*hid1-5:6*hid1];Δd[6*hid2-5:6*hid2]]
-
-
     Δϵᵉ=Bᵉ*Δdᵉ
     Δσᵉ=∫D*Δϵᵉ
     σᵉ+=Δσᵉ

@@ -1,6 +1,5 @@
 using LinearAlgebra
 using SparseArrays
-using Printf
 using Logging
 
 using Arpack
@@ -40,10 +39,10 @@ function resolve_BC(d̄,restrainedDOFs)
     return Array(d)
 end
 
-function calc_Kσ(structure,d₀)
+function K₂(structure,d₀)::SparseMatrixCSC
     nDOF=length(structure.nodes)*6
     restrainedDOFs=[]
-    Kσ=spzeros(nDOF,nDOF)
+    K=spzeros(nDOF,nDOF)
     for elm in values(structure.beams)
         i = elm.node1.hid
         j = elm.node2.hid
@@ -55,14 +54,21 @@ function calc_Kσ(structure,d₀)
 
         T=sparse(elm.T)
         dᵉ=T*[d₀[i*6-5:i*6];d₀[j*6-5:j*6]]
-        Kᵉ=integrateK!(elm)
-        σ=(Kᵉ*dᵉ)[1]
-        Kσᵉ=integrateKσ(elm,σ)
-
+        # Kᵉ=integrateK!(elm)
+        # σ=(Kᵉ*dᵉ)[1]
+        Kᵢᵉ=elm.Kᵉ
+        σ=(Kᵢᵉ*dᵉ)[1]
+        Kᵉ=sparse(Kᵢᵉ)+integrateKσ(elm,σ)
         A=T*G
-        Kσ+=A'*Kσᵉ*A
+        rDOF=findall(x->x==true,elm.release)
+        if length(rDOF)!=0
+            K̄ᵉ,P̄ᵉ=FEStructure.FEBeam.static_condensation(Array(Kᵉ),zeros(12),rDOF)
+            K+=A'*K̄ᵉ*A
+        else
+            K+=A'*Kᵉ*A
+        end
     end
-    return Kσ
+    return K
 end
 
 function solve_linear_static(structure,loadcase,restrainedDOFs)
@@ -120,8 +126,7 @@ function solve_2nd_static(structure,loadcase,restrainedDOFs;conv_tol=1e-16,steps
     if loadcase.plc!=""
         u=read_vector(joinpath(path,".analysis"),loadcase.plc*"_u.v")
         F₀=read_vector(joinpath(path,".analysis"),loadcase.plc*"_F.v")
-        Kσ=calc_Kσ(structure,u)
-        K=structure.K+Kσ #初始位移及初始刚度来自前一步结果
+        K=K₂(structure,u)
     end
     K̄=introduce_BC(K,restrainedDOFs)
     P̄=introduce_BC(P,restrainedDOFs)
@@ -148,8 +153,7 @@ function solve_2nd_static(structure,loadcase,restrainedDOFs;conv_tol=1e-16,steps
             Δu=resolve_BC(Δū,restrainedDOFs)
             ū+=Δū
             u=resolve_BC(ū,restrainedDOFs) #T.L格式，相对零位形
-            Kσ=calc_Kσ(structure,u)
-            K=structure.K+Kσ #应力刚化/软化
+            K=K₂(structure,u)#应力刚化/软化
             F+=K*Δu #计算非线性内力
             K̄=introduce_BC(K,restrainedDOFs)
             F̄=introduce_BC(F,restrainedDOFs)
