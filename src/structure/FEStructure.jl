@@ -378,11 +378,11 @@ end
 
 """
     add_tria!(structure,id,i,j,k,mat_id,t)
-向structure实例加入quad单元
+向structure实例加入Tria单元
 # Arguments
 - `structure`: Structure类型实例
 - `id`: 单元id
-- `i,j,k,l`: 节点id
+- `i,j,k`: 节点id
 - `mat_id`: 材料id
 - `t`: 截面厚度
 """

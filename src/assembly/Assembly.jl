@@ -23,6 +23,7 @@ mutable struct Assembly
     node_count::Int
     beam_count::Int
     quad_count::Int
+    tria_count::Int
 
     nDOF::Int
     nfreeDOF::Int
@@ -52,6 +53,7 @@ function assemble!(structure,lcset;mass_source="weight",mass_cases=[],mass_cases
     node_count=length(structure.nodes)
     beam_count=length(structure.beams)
     quad_count=length(structure.quads)
+    tria_count=length(structure.trias)
 
     K=spzeros(nDOF,nDOF)
     K̄=spzeros(nDOF,nDOF)
@@ -284,7 +286,7 @@ function assemble!(structure,lcset;mass_source="weight",mass_cases=[],mass_cases
     else
         throw("mass_source should be only weight or loadcases")
     end
-    return Assembly(structure,lcset,node_count,beam_count,quad_count,
+    return Assembly(structure,lcset,node_count,beam_count,quad_count,tria_count,
     nDOF,nDOF-length(restrainedDOFs),restrainedDOFs,lc_tree,path)
 end
 

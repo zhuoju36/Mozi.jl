@@ -1,25 +1,32 @@
-include("../src/Mozi.jl")
-
 using Test
 using Logging
 
-using .Mozi
+using Mozi
 
 const PATH=pwd()
+
+macro showbanner(word,total=99)
+    n=length(word)
+    m=(total-n)÷2
+    for i in 1:m
+        print("-")
+    end
+    print(word)
+    for i in 1:total-m-n
+        print("-")
+    end
+    println()
+end
 
 # include("./static_cantilever.jl")
 # include("./dynamic_cantilever.jl")
 # include("./buckling_cantilever.jl")
 
-<<<<<<< HEAD
 include("./static_quad.jl")
-=======
-# include("./static_quad.jl")
->>>>>>> fe2bb26206ec8322c24b4c818985cdc595d840f6
 # include("./dynamic_quad.jl")
 # include("./buckling_quad.jl")
 
-# include("./static_tria.jl")
+include("./static_tria.jl")
 # include("./dynamic_tria.jl")
 # include("./buckling_tria.jl")
 
