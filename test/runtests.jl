@@ -15,6 +15,10 @@ include("./buckling_cantilever.jl")
 # include("./dynamic_quad.jl")
 # include("./buckling_quad.jl")
 
+# include("./static_tria.jl")
+# include("./dynamic_tria.jl")
+# include("./buckling_tria.jl")
+
 # include("./static_p_delta.jl")
 # include("./dynamic_p_delta.jl")
 # include("./buckling_p_delta.jl")

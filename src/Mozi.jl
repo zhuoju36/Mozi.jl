@@ -45,6 +45,8 @@ export add_beam!,set_beam_release!,set_beam_orient!
 
 export add_quad!,set_quad_rotation!
 
+export add_tria!,set_tria_rotation!
+
 export add_static_case!, add_modal_case!, add_buckling_case!, add_time_history_case!
 
 export add_nodal_force!
