@@ -12,13 +12,14 @@ using SparseArrays
 using ..Enums
 using ..CoordinateSystem
 using .FEMaterial,.FESection
-using .FENode, .FEBeam, .FEQuad
+using .FENode, .FEBeam, .FEQuad, .FETria
 
 export Structure,
 add_uniaxial_metal!,add_section!,add_general_section!,add_beam_section!,
 add_node!,set_nodal_restraint!,set_nodal_spring!,set_nodal_mass!,
 add_beam!,set_beam_release!,set_beam_orient!,
 add_quad!,set_quad_rotation!,
+add_tria!,set_tria_rotation!,
 
 set_damp_constant!,set_damp_Rayleigh!,
 integrateK!,integrateM!,integrateP!,
@@ -35,6 +36,7 @@ mutable struct Structure
     cables::Array
     beams::Dict{String,Beam}
     quads::Dict{String,Quad}
+    trias::Dict{String,Tria}
 
     damp::String
     ζ₁::Float64
@@ -57,7 +59,7 @@ function Structure()
     C=spzeros(1,1)
     C̄=spzeros(1,1)
     Structure(Dict("Global"=>globalcsys),Dict{String,Material}(),Dict{String,BeamSection}(),Dict{String,Node}(),[],[],
-    Dict{String,Beam}(),Dict{String,Quad}(),"constant",0.05,0,K,K̄,M,M̄,C,C̄)
+    Dict{String,Beam}(),Dict{String,Quad}(),Dict{String,Tria}(),"constant",0.05,0,K,K̄,M,M̄,C,C̄)
 end
 
 """
@@ -351,19 +353,83 @@ function add_quad!(structure,id,i,j,k,l,mat_id,t;membrane=true,plate=true)
     structure.quads[id]=quad
 end
 
+"""
+    set_quad_rotation!(structure,id,degree)
+向structure实例加入quad单元
+# Arguments
+- `structure`: Structure类型实例
+- `id`: 单元id
+- `degree`: 旋转角度（ᵒ）
+"""
 function set_quad_rotation!(structure,id,degree)
     id=string(id)
-    if !(id in keys(structure.beams))
-        throw("beam id "*string(id)*" doesn't exists!")
+    if !(id in keys(structure.quads))
+        throw("quad id "*string(id)*" doesn't exists!")
     end
     rad=π/180*degree
     Rₓ=[cos(rad) -sin(rad) 0;
         sin(rad) cos(rad) 0;
         0 0 1]
-    structure.quads[id].T[1:3,1:3]*=Rₓ
-    structure.quads[id].T[4:6,4:6]*=Rₓ
-    structure.quads[id].T[7:9,7:9]*=Rₓ
-    structure.quads[id].T[10:12,10:12]*=Rₓ
+    for i in 1:4
+        structure.quads[id].T[6i-5:6i-3,6i-5:6i-3]*=Rₓ
+        structure.quads[id].T[6i-2:6i,6i-2:6i]*=Rₓ
+    end
+end
+
+"""
+    add_tria!(structure,id,i,j,k,mat_id,t)
+向structure实例加入quad单元
+# Arguments
+- `structure`: Structure类型实例
+- `id`: 单元id
+- `i,j,k,l`: 节点id
+- `mat_id`: 材料id
+- `t`: 截面厚度
+"""
+function add_tria!(structure,id,i,j,k,mat_id,t)
+    id=string(id)
+    hid=length(structure.trias)+1
+    if id in keys(structure.trias)
+        throw("tria id "*string(id)*" already exists!")
+    end
+    i,j,k=string(i),string(j),string(k)
+    for n_i in (i,j,k)
+        if !(n_i in keys(structure.nodes))
+            throw("node with id "*n_i*" doesn't exist!")
+        end
+    end
+    if !(mat_id in keys(structure.materials))
+        throw("material with id "*string(j)*" doesn't exist!")
+    end
+    node1=structure.nodes[i]
+    node2=structure.nodes[j]
+    node3=structure.nodes[k]
+    material=structure.materials[mat_id]
+    tria=Tria(id,hid,node1,node2,node3,material,t)
+    structure.trias[id]=tria
+end
+
+"""
+    set_tria_rotation!(structure,id,degree)
+向structure实例加入quad单元
+# Arguments
+- `structure`: Structure类型实例
+- `id`: 单元id
+- `degree`: 旋转角度（ᵒ）
+"""
+function set_tria_rotation!(structure,id,degree)
+    id=string(id)
+    if !(id in keys(structure.trias))
+        throw("tria id "*string(id)*" doesn't exists!")
+    end
+    rad=π/180*degree
+    Rₓ=[cos(rad) -sin(rad) 0;
+        sin(rad) cos(rad) 0;
+        0 0 1]
+    for i in 1:3
+        structure.quads[id].T[6i-5:6i-3,6i-5:6i-3]*=Rₓ
+        structure.quads[id].T[6i-2:6i,6i-2:6i]*=Rₓ
+    end
 end
 
 """
@@ -394,13 +460,16 @@ end
 
 integrateK!(elm::Beam)=FEBeam.integrateK!(elm)
 integrateK!(elm::Quad)=FEQuad.integrateK!(elm)
+integrateK!(elm::Tria)=FETria.integrateK!(elm)
 
 integrateKσ(elm::Beam,σ)=FEBeam.integrateKσ(elm,σ)
 
 integrateM!(elm::Beam)=FEBeam.integrateM!(elm)
 integrateM!(elm::Quad)=FEQuad.integrateM!(elm)
+integrateM!(elm::Tria)=FETria.integrateM!(elm)
 
 integrateP!(elm::Beam,force)=FEBeam.integrateP!(elm,force)
 integrateP!(elm::Quad,force)=FEQuad.integrateP!(elm,force)
+integrateP!(elm::Tria,force)=FETria.integrateP!(elm,force)
 
 end

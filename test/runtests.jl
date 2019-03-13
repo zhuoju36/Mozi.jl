@@ -11,9 +11,17 @@ const PATH=pwd()
 # include("./dynamic_cantilever.jl")
 # include("./buckling_cantilever.jl")
 
+<<<<<<< HEAD
 include("./static_quad.jl")
+=======
+# include("./static_quad.jl")
+>>>>>>> fe2bb26206ec8322c24b4c818985cdc595d840f6
 # include("./dynamic_quad.jl")
 # include("./buckling_quad.jl")
+
+# include("./static_tria.jl")
+# include("./dynamic_tria.jl")
+# include("./buckling_tria.jl")
 
 # include("./static_p_delta.jl")
 # include("./dynamic_p_delta.jl")
