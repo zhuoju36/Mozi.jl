@@ -149,7 +149,7 @@ mutable struct TimeHistoryCase
         Dict{String,BeamForce}(),
         Dict{String,QuadForce}(),
         "newmark",
-        0.85
+        0.85,
         0.25,
         0.5,
         1.4,
@@ -334,7 +334,7 @@ end
 - `θ`: 对Wilson法的可选参数
 - `modal_case`: 对振型分解法要求的模态工况
 """
-function set_time_history_params!(lcset::LoadCaseSet,lc,algorithm;β=0.25,γ=0.5,θ=1.4,modal_case="")
+function set_time_history_params!(lcset::LoadCaseSet,lc,algorithm;α=0.85,β=0.25,γ=0.5,θ=1.4,modal_case="")
     lc=string(lc)
     if !(lc in keys(lcset.time_histories))
         throw("Time history case with id "*lc*" doe not exists!")
