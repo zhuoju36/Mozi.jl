@@ -151,6 +151,25 @@ function assemble!(structure,lcset;mass_source="weight",mass_cases=[],mass_cases
         K+=A'*Kᵉ*A
         M+=A'*Mᵉ*A
     end
+
+    for elm in values(structure.trias)
+        i = elm.node1.hid
+        j = elm.node2.hid
+        k = elm.node3.hid
+
+        T=sparse(elm.T)
+
+        I=collect(1:18)
+        J=[6i-5:6i;6j-5:6j;6k-5:6k]
+        G=sparse(I,J,1.,18,nDOF)
+
+        Kᵉ=integrateK!(elm)
+        Mᵉ=integrateM!(elm)
+
+        A=T*G
+        K+=A'*Kᵉ*A
+        M+=A'*Mᵉ*A
+    end
 # end
 # @show 3
     for node in values(structure.nodes)
@@ -195,6 +214,7 @@ function assemble!(structure,lcset;mass_source="weight",mass_cases=[],mass_cases
         fi1,fi2,fi3,mi1,mi2,mi3,fi1,fi2,fi3,mi1,mi2,mi3=fᵉ
         add_beam_distributed!(_gset,"__Gravity__",elm.id,fi1,fi2,fi3,mi1,mi2,mi3,fi1,fi2,fi3,mi1,mi2,mi3)
     end
+    #add quad / tria gravity
     for load in values(_gset.statics["__Gravity__"].beam_forces)
         elm=structure.beams[load.id]
         i = elm.node1.hid
