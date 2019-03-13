@@ -131,6 +131,7 @@ mutable struct TimeHistoryCase
     quad_forces::Dict{String,QuadForce}
 
     algorithm::String
+    α::Float64
     β::Float64
     γ::Float64
     θ::Float64
@@ -148,6 +149,7 @@ mutable struct TimeHistoryCase
         Dict{String,BeamForce}(),
         Dict{String,QuadForce}(),
         "newmark",
+        0.85
         0.25,
         0.5,
         1.4,
@@ -320,15 +322,16 @@ function add_time_history_case!(lcset::LoadCaseSet,id,t,f;plc="")
 end
 
 """
-    set_time_history_params!(lcset::LoadCaseSet,lc,algorithm;β=0.25,γ=0.5,θ=1.4)
+    set_time_history_params!(lcset::LoadCaseSet,lc,algorithm;α=0.85,β=0.25,γ=0.5,θ=1.4)
 设定时程工况分析参数
 # 参数
 - `lcset::LoadCaseSet`: LoadCaseSet实例
 - `lc`: 工况id
 - `algorithm`: 0-中心差分法； 1-Newmark-β法； 2-Wilson-Θ法；3-振型分解法
-- `β`: 可选参数
-- `γ`: 可选参数
-- `θ`: 可选参数
+- `α`: 对HHT法的可选参数
+- `β`: 对Newmark、Wilson法的可选参数
+- `γ`: 对Newmark、Wilson法的可选参数
+- `θ`: 对Wilson法的可选参数
 - `modal_case`: 对振型分解法要求的模态工况
 """
 function set_time_history_params!(lcset::LoadCaseSet,lc,algorithm;β=0.25,γ=0.5,θ=1.4,modal_case="")
@@ -348,6 +351,7 @@ function set_time_history_params!(lcset::LoadCaseSet,lc,algorithm;β=0.25,γ=0.5
         throw("算法不存在")
     end
     lcset.time_histories[lc].algorithm=algor
+    lcset.time_histories[lc].α=α
     lcset.time_histories[lc].β=β
     lcset.time_histories[lc].γ=γ
     lcset.time_histories[lc].θ=θ
