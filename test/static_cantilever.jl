@@ -18,8 +18,7 @@ assembly=assemble!(st,lcset,path=PATH)
 solve(assembly)
 
 r=result_nodal_reaction(assembly,"DL",1)
-passed=@test r≈[-2.83076e-10,-9.04954e-10,8926.15,53556.9,-80335.3,-3.29473e-8] atol=1e-1
-@show passed
+@test r≈[-2.83076e-10,-9.04954e-10,8926.15,53556.9,-80335.3,-3.29473e-8] atol=1e-1
 
 @info "---------- Modal test ----------"
 clear_result!(assembly)
@@ -45,5 +44,4 @@ add_static_case!(lcset,"DL",1.1)
 assembly=assemble!(st,lcset,path=PATH)
 solve(assembly)
 r=result_nodal_displacement(assembly,"DL",2)
-passed=@test r≈[193.258,160.973,-453.836,-13.4228,16.1175,3.14657e-9] atol=1e-2
-@show passed
+@test r≈[193.258,160.973,-453.836,-13.4228,16.1175,3.14657e-9] atol=1e-2

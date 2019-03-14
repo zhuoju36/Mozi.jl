@@ -95,7 +95,7 @@ end
 - `assembly`: Assembly对象
 """
 function solve(assembly,run="all")
-    @info "STRUCTURE INFO" Total_DOF=assembly.nDOF Free_DOF=assembly.nfreeDOF N_Nodes=assembly.node_count N_Beams=assembly.beam_count N_Quads=assembly.quad_count
+    @info "STRUCTURE INFO" Total_DOF=assembly.nDOF Free_DOF=assembly.nfreeDOF N_Nodes=assembly.node_count N_Beams=assembly.beam_count N_Quads=assembly.quad_count N_Trias=assembly.tria_count
     path=assembly.working_path
     mkpath(joinpath(path,".analysis"))
     structure=assembly.structure
