@@ -22,7 +22,7 @@ end
 # include("./dynamic_cantilever.jl")
 # include("./buckling_cantilever.jl")
 
-include("./static_quad.jl")
+# include("./static_quad.jl")
 # include("./dynamic_quad.jl")
 # include("./buckling_quad.jl")
 
