@@ -2,7 +2,7 @@
 st=Structure()
 lcset=LoadCaseSet()
 
-add_uniaxial_metal!(st,"steel",2e5,0.2,7849.0474)
+add_uniaxial_metal!(st,"steel",2e11,0.3,7849.0474)
 add_static_case!(lcset,"DL",0)
 
 add_node!(st,1,0,0,0)
@@ -14,12 +14,12 @@ add_node!(st,6,6,6,0)
 add_node!(st,7,12,6,0)
 add_node!(st,8,18,6,0)
 
-add_tria!(st,1,1,6,5,"steel",1e-3)
-add_tria!(st,2,1,2,6,"steel",1e-3)
-add_tria!(st,3,2,7,6,"steel",1e-3)
-add_tria!(st,4,2,3,7,"steel",1e-3)
-add_tria!(st,5,3,8,7,"steel",1e-3)
-add_tria!(st,6,3,4,8,"steel",1e-3)
+add_tria!(st,1,1,2,5,"steel",1e-3)
+add_tria!(st,2,2,6,5,"steel",1e-3)
+add_tria!(st,3,2,3,6,"steel",1e-3)
+add_tria!(st,4,3,7,6,"steel",1e-3)
+add_tria!(st,5,3,4,7,"steel",1e-3)
+add_tria!(st,6,4,8,7,"steel",1e-3)
 
 add_nodal_force!(lcset,"DL",8,0,-1e5,0,0,0,0)
 
@@ -35,4 +35,4 @@ solve(assembly)
 
 r=result_nodal_displacement(assembly,"DL",8)
 
-@show r
+@test r≈[0.00345715, -0.0164571, 0.0, 0.0, 0.0, 0.0] atol=1e-4
