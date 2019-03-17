@@ -18,11 +18,11 @@ macro showbanner(word,total=99)
     println()
 end
 
-# include("./static_cantilever.jl")
-# include("./dynamic_cantilever.jl")
-# include("./buckling_cantilever.jl")
+include("./static_cantilever.jl")
+include("./dynamic_cantilever.jl")
+include("./buckling_cantilever.jl")
 
-# include("./static_quad.jl")
+include("./static_quad.jl")
 # include("./dynamic_quad.jl")
 # include("./buckling_quad.jl")
 
