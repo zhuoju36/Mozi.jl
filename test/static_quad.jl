@@ -1,23 +1,23 @@
 
-# include("../src/Mozi.jl")
-# using Test
-# using Logging
-#
-# using .Mozi
-#
-# const PATH=pwd()
-# macro showbanner(word,total=99)
-#     n=length(word)
-#     m=(total-n)÷2
-#     for i in 1:m
-#         print("-")
-#     end
-#     print(word)
-#     for i in 1:total-m-n
-#         print("-")
-#     end
-#     println()
-# end
+include("../src/Mozi.jl")
+using Test
+using Logging
+
+using .Mozi
+
+const PATH=pwd()
+macro showbanner(word,total=99)
+    n=length(word)
+    m=(total-n)÷2
+    for i in 1:m
+        print("-")
+    end
+    print(word)
+    for i in 1:total-m-n
+        print("-")
+    end
+    println()
+end
 
 @showbanner "Basic quad membrane test"
 st=Structure()
@@ -30,17 +30,13 @@ add_node!(st,2,-1,1,0)
 add_node!(st,3,-1,-1,0)
 add_node!(st,4,1,-1,0)
 
-add_quad!(st,1,3,2,1,4,"steel",1e-3)
+add_quad!(st,1,1,2,3,4,"steel",1e-3)
 
 add_static_case!(lcset,"DL",0)
 add_nodal_force!(lcset,"DL",4,0,-1e5,0,0,0,0)
 
 set_nodal_restraint!(st,1,true,true,true,true,true,true)
 set_nodal_restraint!(st,2,true,true,true,true,true,true)
-
-for i in [3,4]
-    set_nodal_restraint!(st,i,false,false,false,false,false,true)
-end
 
 assembly=assemble!(st,lcset,path=PATH)
 solve(assembly)
@@ -74,9 +70,6 @@ add_quad!(st,1,4,3,2,1,"steel",1e-3)
 
 set_nodal_restraint!(st,1,true,true,true,true,true,true)
 set_nodal_restraint!(st,2,true,true,true,true,true,true)
-for i in [3,4]
-    set_nodal_restraint!(st,i,false,false,false,false,false,true)
-end
 
 add_static_case!(lcset,"DL",0)
 add_nodal_force!(lcset,"DL",4,0,-1e5,0,0,0,0)
@@ -120,10 +113,6 @@ add_nodal_force!(lcset,"DL",8,0,-1e5,0,0,0,0)
 
 set_nodal_restraint!(st,1,true,true,true,true,true,true)
 set_nodal_restraint!(st,5,true,true,true,true,true,true)
-
-for i in [2,3,4,6,7,8]
-    set_nodal_restraint!(st,i,false,false,false,false,false,true)
-end
 
 assembly=assemble!(st,lcset,path=PATH)
 solve(assembly)
