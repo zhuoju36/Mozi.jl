@@ -341,8 +341,8 @@ function add_quad!(structure,id,i,j,k,l,mat_id,t;membrane=true,plate=true)
             throw("node with id "*n_i*" doesn't exist!")
         end
     end
-    if !(mat_id in keys(structure.materials))
-        throw("material with id "*string(j)*" doesn't exist!")
+    if !(string(mat_id) in keys(structure.materials))
+        throw("material with id "*string(mat_id)*" doesn't exist!")
     end
     node1=structure.nodes[i]
     node2=structure.nodes[j]
