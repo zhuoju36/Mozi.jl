@@ -1,23 +1,23 @@
-
-include("../src/Mozi.jl")
-using Test
-using Logging
-
-using .Mozi
-
-const PATH=pwd()
-macro showbanner(word,total=99)
-    n=length(word)
-    m=(total-n)÷2
-    for i in 1:m
-        print("-")
-    end
-    print(word)
-    for i in 1:total-m-n
-        print("-")
-    end
-    println()
-end
+# 
+# include("../src/Mozi.jl")
+# using Test
+# using Logging
+#
+# using .Mozi
+#
+# const PATH=pwd()
+# macro showbanner(word,total=99)
+#     n=length(word)
+#     m=(total-n)÷2
+#     for i in 1:m
+#         print("-")
+#     end
+#     print(word)
+#     for i in 1:total-m-n
+#         print("-")
+#     end
+#     println()
+# end
 
 @showbanner "Basic quad test"
 st=Structure()

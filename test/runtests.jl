@@ -26,7 +26,7 @@ include("./static_quad.jl")
 # include("./dynamic_quad.jl")
 # include("./buckling_quad.jl")
 
-include("./static_tria.jl")
+# include("./static_tria.jl")
 # include("./dynamic_tria.jl")
 # include("./buckling_tria.jl")
 
