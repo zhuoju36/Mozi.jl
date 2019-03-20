@@ -32,17 +32,17 @@ add_node!(st,4,1,-1,0)
 
 add_quad!(st,1,1,2,3,4,"steel",1e-3)
 
-add_static_case!(lcset,"DL",0)
-add_nodal_force!(lcset,"DL",4,0,-1e5,0,0,0,0)
-
 set_nodal_restraint!(st,1,true,true,true,true,true,true)
 set_nodal_restraint!(st,2,true,true,true,true,true,true)
 
-assembly=assemble!(st,lcset,path=PATH)
-solve(assembly)
+add_static_case!(lcset,"DL",0)
+add_nodal_force!(lcset,"DL",4,0,-1e5,0,0,0,0)
 
-r=result_nodal_displacement(assembly,"DL",4)
-@show r
+# assembly=assemble!(st,lcset,path=PATH)
+# solve(assembly)
+
+# r=result_nodal_displacement(assembly,"DL",4)
+# @show r
 
 @showbanner "Basic quad bending test"
 lcset=LoadCaseSet()
