@@ -319,9 +319,9 @@ function integrateKb!(elm::Quad)::SparseMatrixCSC{Float64}
        0 -b₃/(b₂*c₃-b₃*c₂) b₂/(b₂*c₃-b₃*c₂) 0]
 
     Yₛ=[0 0 -c₄/(b₃*c₄-b₄*c₃) c₃/(b₃*c₄-b₄*c₃);
-      c₄/(b₄*c₁-b₁*c₄) 0 0 -c₁/(b₄*c₁-b₁*c₄);
-      -c₂/(b₁*c₂-b₂*c₁) c₁/(b₁*c₂-b₂*c₁) 0 0;
-      0 -c₃/(b₂*c₃-b₃*c₂) c₂/(b₂*c₃-b₃*c₂) 0]
+       c₄/(b₄*c₁-b₁*c₄) 0 0 -c₁/(b₄*c₁-b₁*c₄);
+       -c₂/(b₁*c₂-b₂*c₁) c₁/(b₁*c₂-b₂*c₁) 0 0;
+       0 -c₃/(b₂*c₃-b₃*c₂) c₂/(b₂*c₃-b₃*c₂) 0]
 
     α=[0 0 0 -3c₁/2/d₁^2*(1-2δ₁) 1/2/d₁^2*(b₁^2-c₁^2/2*(1-6δ₁)) 3b₁*c₁/4/d₁^2*(1-2δ₁) 3c₁/2/d₁^2*(1-2δ₁) 1/2/d₁^2*(b₁^2-c₁^2/2*(1-6δ₁)) 3b₁*c₁/4/d₁^2*(1-2δ₁) 0 0 0;
        0 0 0 0 0 0 -3c₂/2/d₂^2*(1-2δ₂) 1/2/d₂^2*(b₂^2-c₂^2/2*(1-6δ₂)) 3b₂*c₂/4/d₂^2*(1-2δ₂) 3c₂/2/d₂^2*(1-2δ₂) 1/2/d₂^2*(b₂^2-c₂^2/2*(1-6δ₂)) 3b₂*c₂/4/d₂^2*(1-2δ₂);
@@ -374,7 +374,7 @@ function integrateKb!(elm::Quad)::SparseMatrixCSC{Float64}
         dN₇dη = -1.0*η*(1 - ξ)
         dN₈dξ = -1.0*ξ*(1 - η)
         dN₈dη = -0.5*(1 - ξ^2)
-
+        # J=Matrix(1.0I,2,2)
         dN₁dx,dN₁dy=inv(J)*[dN₁dξ,dN₁dη]
         dN₂dx,dN₂dy=inv(J)*[dN₂dξ,dN₂dη]
         dN₃dx,dN₃dy=inv(J)*[dN₃dξ,dN₃dη]
@@ -384,8 +384,8 @@ function integrateKb!(elm::Quad)::SparseMatrixCSC{Float64}
         dN₇dx,dN₇dy=inv(J)*[dN₇dξ,dN₇dη]
         dN₈dx,dN₈dy=inv(J)*[dN₈dξ,dN₈dη]
 
-        H₀=[0 dN₁dx 0 0 dN₂dx 0 0 dN₃dx 0 0 dN₄dx 0;
-            0 0 dN₁dy 0 0 dN₂dy 0 0 dN₃dy 0 0 dN₄dy;
+        H₀=[0 dN₁dx     0 0 dN₂dx     0 0     dN₃dx 0 0     dN₄dx 0;
+            0     0 dN₁dy 0     0 dN₂dy 0     0 dN₃dy 0     0 dN₄dy;
             0 dN₁dy dN₁dx 0 dN₂dy dN₂dx 0 dN₃dy dN₃dx 0 dN₄dy dN₄dx]
 
         H₁=[dN₅dx dN₆dx dN₇dx dN₈dx;
@@ -400,11 +400,21 @@ function integrateKb!(elm::Quad)::SparseMatrixCSC{Float64}
 
         Kb=transpose(Bb)*D*Bb
         Ks=transpose(Bs)*C*Bs
-        K=Kb+Ks
+        K=Kb#+Ks
 
         return K*det(J)
     end
-    elm.Kbᵉ=sparse(hcubature(BtDB,[-1,-1],[1,1])[1])
+    Kb=sparse(hcubature(BtDB,[-1,-1],[1,1])[1])
+    #left-hand system to right-hand system
+    I=1:12
+    J=[1,3,2,4,6,5,7,9,8,10,12,11]
+    L=sparse(I,J,1.,12,12)
+    for i in [1,3,4,6,7,9,10,12]
+        for j in [2,5,8,11]
+            Kb[i,j]=Kb[j,i]=-Kb[i,j]
+        end
+    end
+    elm.Kbᵉ=L'*sparse(Kb)*L
 end
 
 function integrateK!(elm::Quad)::SparseMatrixCSC{Float64}
