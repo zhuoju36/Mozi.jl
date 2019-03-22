@@ -11,7 +11,7 @@ using ..LoadCase
 
 export solve
 
-function DFSsolve(lc_node,structure,restrainedDOFs::Vector{Bool},path)
+function DFSsolve(lc_node,structure,restrainedDOFs::Vector{Int},path)
     if lc_node.case!="root"
         solve_case(structure,lc_node.case,restrainedDOFs,path)
     end

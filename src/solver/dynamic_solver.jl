@@ -12,7 +12,7 @@ end
 
 include("../util/numeric.jl")
 
-function solve_modal_eigen(structure,loadcase,restrainedDOFs::Vector{Bool};path=pwd())
+function solve_modal_eigen(structure,loadcase,restrainedDOFs::Vector{Int};path=pwd())
     @info "-------------------------- 求解自振模态特征值 --------------------------" 工况=loadcase.id 前一步基础工况=loadcase.plc
     K=structure.K
     P=loadcase.P
@@ -50,7 +50,7 @@ function solve_modal_eigen(structure,loadcase,restrainedDOFs::Vector{Bool};path=
     return ω²,ϕ
 end
 
-function solve_modal_Ritz(structure,loadcase,restrainedDOFs::Vector{Bool};path=pwd())
+function solve_modal_Ritz(structure,loadcase,restrainedDOFs::Vector{Int};path=pwd())
     @info "-------------------------- 求解自振模态Ritz值 -------------------------" 工况=loadcase.id 前一步基础工况=loadcase.plc
     K=structure.K
     P=loadcase.P
@@ -104,7 +104,7 @@ function solve_modal_Ritz(structure,loadcase,restrainedDOFs::Vector{Bool};path=p
     return ω²,ϕ
 end
 
-function solve_newmark_beta(structure,loadcase,restrainedDOFs::Vector{Bool};path=pwd())
+function solve_newmark_beta(structure,loadcase,restrainedDOFs::Vector{Int};path=pwd())
     T=loadcase.t
     Δt=(T[end]-T[1])/(length(T)-1)
 
@@ -172,7 +172,7 @@ function solve_newmark_beta(structure,loadcase,restrainedDOFs::Vector{Bool};path
     return u,v,a
 end
 
-function solve_wilson_theta(structure,loadcase,restrainedDOFs::Vector{Bool};path=pwd())
+function solve_wilson_theta(structure,loadcase,restrainedDOFs::Vector{Int};path=pwd())
     @info "----------------------- 求解Wilson-θ法逐步积分 -----------------------"
     T=loadcase.t
     Δt=(T[end]-T[1])/(length(T)-1)
@@ -249,7 +249,7 @@ end
 
 #not finished
 
-function solve_HHT_alpha(structure,loadcase,restrainedDOFs::Vector{Bool};path=pwd())
+function solve_HHT_alpha(structure,loadcase,restrainedDOFs::Vector{Int};path=pwd())
     T=loadcase.t
     Δt=(T[end]-T[1])/(length(T)-1)
     α=loadcase.α
@@ -317,7 +317,7 @@ function solve_HHT_alpha(structure,loadcase,restrainedDOFs::Vector{Bool};path=pw
     return u,v,a
 end
 
-function solve_wilson_theta(structure,loadcase,restrainedDOFs::Vector{Bool};path=pwd())
+function solve_wilson_theta(structure,loadcase,restrainedDOFs::Vector{Int};path=pwd())
     @info "----------------------- 求解Wilson-θ法逐步积分 -----------------------"
     T=loadcase.t
     Δt=(T[end]-T[1])/(length(T)-1)
@@ -411,7 +411,7 @@ function diffasdiff(x₀,y₀)
     dydx./2
 end
 
-function solve_modal_decomposition(structure,loadcase,restrainedDOFs::Vector{Bool};path=pwd())
+function solve_modal_decomposition(structure,loadcase,restrainedDOFs::Vector{Int};path=pwd())
     modal_case=loadcase.modal_case
     ω²=read_vector(path*"/.analysis",modal_case*"_o.v")
     ϕ=read_matrix(path*"/.analysis",modal_case*"_p.m")
@@ -449,7 +449,7 @@ function solve_modal_decomposition(structure,loadcase,restrainedDOFs::Vector{Boo
     return u,v,a
 end
 
-function solve_central_diff(structure,loadcase,restrainedDOFs::Vector{Bool};path=pwd(),Δtcr=0)
+function solve_central_diff(structure,loadcase,restrainedDOFs::Vector{Int};path=pwd(),Δtcr=0)
     T=loadcase.t
     Δt=(T[end]-T[1])/(length(T)-1)
     @info "----------------------- 求解中心差分法逐步积分 -----------------------" Δt=Δt
@@ -510,7 +510,7 @@ function solve_central_diff(structure,loadcase,restrainedDOFs::Vector{Bool};path
     return u,v,a
 end
 
-function solve_response_spectrum(structure,loadcase,restrainedDOFs::Vector{Bool};path=pwd())
+function solve_response_spectrum(structure,loadcase,restrainedDOFs::Vector{Int};path=pwd())
     modal_case=loadcase.modal_case
     ω²=read_vector(path*"/.analysis",modal_case*"_o.v")
     ϕ=read_matrix(path*"/.analysis",modal_case*"_p.m")
