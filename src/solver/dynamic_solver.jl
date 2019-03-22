@@ -241,8 +241,8 @@ function solve_HHT_alpha(structure,loadcase,restrainedDOFs::Vector{Int};path=pwd
     T=loadcase.t
     Δt=(T[end]-T[1])/(length(T)-1)
     α=loadcase.α
-    β=loadcase.β
-    γ=loadcase.γ
+    β=(2-α^2)/4
+    γ=1.5-α
     @info "----------------------- 求解Hilber-Hughes-Taylor法逐步积分 -----------------------"
     K̄=introduce_BC(structure.K,restrainedDOFs)
     M̄=introduce_BC(structure.M,restrainedDOFs)
@@ -252,8 +252,8 @@ function solve_HHT_alpha(structure,loadcase,restrainedDOFs::Vector{Int};path=pwd
     u₀=zeros(size(K̄,1))
     v₀=zeros(size(K̄,1))
 
-    if !(β>=0.25*(0.5+γ)^2 && γ>=0.5)
-        @warn "算法可能不稳定"
+    if !(0.5<α<1.0)
+        @warn "算法可能不精确"
     end
     c₀=1/(β*Δt^2)
     c₁=γ/(β*Δt)
@@ -291,6 +291,14 @@ function solve_HHT_alpha(structure,loadcase,restrainedDOFs::Vector{Int};path=pwd
         end
         ā[:,t+1]=c₀*(ū[:,t+1]-ū[:,t])-c₂*v̄[:,t]-c₃*ā[:,t]
         v̄[:,t+1]=v̄[:,t]+c₆*ā[:,t]+c₇*ā[:,t+1]
+
+        u=(1-α)*u[:,t]+α*u[:,t+1]
+        v=(1-α)*v[:,t]+α*v[:,t+1]
+        Q̂=Q̄[:,t+1]-M̄*a[:,t+1]-C̄*v[:,t+1]-
+        K̂=α*K̄+(α*γ/β/Δt)*C̄+(1/β/Δt^2)*M̄
+        R̂=F-F?-C̄*v-M*a
+
+
     end
     @info "------------------------------ 求解完成 ------------------------------"
 
