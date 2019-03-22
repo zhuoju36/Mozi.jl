@@ -1,4 +1,6 @@
-using ..FEStructure.FEBeam
+# using ..FEStructure.FEBeam
+export result_beam_force,result_beam_displacement
+
 """
     result_beam_force(assembly,lc_id,beam_id)
 读取已求解的assembly实例的单个beam单元内力
@@ -12,7 +14,7 @@ using ..FEStructure.FEBeam
 function result_beam_force(assembly,lc_id,beam_id)
     path=assembly.working_path
     beam_id=string(beam_id)
-    if !(id in keys(assembl.structure.beams))
+    if !(id in keys(assembly.structure.beams))
         throw("beam id "*string(beam_id)*" doesn't exists!")
     end
     lc_id=string(lc_id)
@@ -88,7 +90,7 @@ end
 
 """
     result_beam_displacement(assembly,lc_id)
-读取已求解的assembly实例的单个beam单元两端节点位移
+读取已求解的assembly实例的所有beam单元两端节点位移
 # 参数
 - `assembly`: Assembly类型实例
 - `lc_id`: 工况id

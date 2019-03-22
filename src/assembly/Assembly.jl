@@ -1,5 +1,5 @@
 
-module AssemblyModule
+module FEAssembly
 
 using SparseArrays
 using LinearAlgebra
@@ -27,10 +27,25 @@ mutable struct Assembly
 
     nDOF::Int
     nfreeDOF::Int
-    restrainedDOFs::Vector
+    restrainedDOFs::Vector{Int}
 
     lc_tree::LCNode
     working_path::String
+end
+
+function DFSfind(lcnode::LCNode,lc::String)
+    if lcnode.case !="root" && lcnode.case.id==lc
+        return lcnode
+    elseif isempty(lcnode.children)
+        return nothing
+    else
+        for child in lcnode.children
+            res=DFSfind(child,lc)
+            if res isa LCNode
+                return res
+            end
+        end
+    end
 end
 
 """
@@ -64,20 +79,7 @@ function assemble!(structure,lcset;mass_source="weight",mass_cases=[],mass_cases
 
     lc_tree=LCNode("root",[])
     lcs=merge(lcset.statics,lcset.modals,lcset.bucklings,lcset.time_histories,lcset.response_spectrums)
-    function DFSfind(lcnode,lc::String)
-        if lcnode.case !="root" && lcnode.case.id==lc
-            return lcnode
-        elseif isempty(lcnode.children)
-            return nothing
-        else
-            for child in lcnode.children
-                res=DFSfind(child,lc)
-                if res isa LCNode
-                    return res
-                end
-            end
-        end
-    end
+
     while !isempty(lcs)
         for k in keys(lcs)
             if lcs[k].plc==""
@@ -107,8 +109,7 @@ function assemble!(structure,lcset;mass_source="weight",mass_cases=[],mass_cases
 
     sort!(restrainedDOFs)
     mask=[(i in restrainedDOFs) ? false : true for i in 1:nDOF]
-# @show 2
-# @time begin
+
     for elm in values(structure.beams)
         i = elm.node1.hid
         j = elm.node2.hid
@@ -172,8 +173,7 @@ function assemble!(structure,lcset;mass_source="weight",mass_cases=[],mass_cases
         K+=A'*Kᵉ*A
         M+=A'*Mᵉ*A
     end
-# end
-# @show 3
+
     for node in values(structure.nodes)
         T=node.T
         spring=T'*node.spring
@@ -199,7 +199,7 @@ function assemble!(structure,lcset;mass_source="weight",mass_cases=[],mass_cases
     else
         throw("Structural damping error!")
     end
-# @show 4
+
     structure.K=K
     structure.C=C
 
@@ -235,8 +235,7 @@ function assemble!(structure,lcset;mass_source="weight",mass_cases=[],mass_cases
             Pg+=G'*T'*Pᵉ
         end
     end
-# @show 5
-    #calculate loadcase loads
+
     cases=merge(lcset.statics,lcset.bucklings,lcset.time_histories)
     for l in keys(cases)
         loadcase=cases[l]
@@ -261,7 +260,7 @@ function assemble!(structure,lcset;mass_source="weight",mass_cases=[],mass_cases
                 Pg+=G'*T'*Pᵉ
             end
         end
-# @show 6
+
         for load in values(loadcase.nodal_forces)
             node=structure.nodes[load.id]
             i = node.hid
@@ -274,7 +273,7 @@ function assemble!(structure,lcset;mass_source="weight",mass_cases=[],mass_cases
         end
         cases[l].P=Array(P)[:,1]
     end
-# @show 7
+
     if mass_source=="weight"
         structure.M=M
     elseif mass_source=="loadcases"
@@ -305,12 +304,7 @@ function clear_result!(assembly)
     assembly.restrainedDOFs=[]
 
     result_dir=joinpath(assembly.working_path,".analysis")
-    # result_dir=chmod(result_dir, 777, recursive=true)
     rm(result_dir,recursive=true)
-    # for f in Filesystem.readdir(result_dir)
-    #     file=Filesystem.joinpath(result_dir,f)
-    #     Filesystem.rm(file,force=true)
-    # end
     return
 end
 

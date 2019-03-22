@@ -1,18 +1,21 @@
 module FEStructure
-
-include("./FEMaterial.jl")
-include("./FESection.jl")
-include("./FENode.jl")
-include("./FEBeam.jl")
-include("./FEQuad.jl")
-include("./FETria.jl")
-
 using SparseArrays
+using LinearAlgebra
+
+using HCubature
 
 using ..Enums
 using ..CoordinateSystem
-using .FEMaterial,.FESection
-using .FENode, .FEBeam, .FEQuad, .FETria
+include("./FEMaterial.jl")
+include("./FESection.jl")
+include("./FENode.jl")
+abstract type AbstractElement end
+include("./FEBeam.jl")
+include("./FEQuad.jl")
+include("./FETria.jl")
+#
+# using .FEMaterial,.FESection
+# using .FENode, .FEBeam, .FEQuad, .FETria
 
 export Structure,
 add_uniaxial_metal!,add_section!,add_general_section!,add_beam_section!,
@@ -458,18 +461,18 @@ function set_damp_Rayleigh!(structure,α,β)
     structure.ζ₂=β
 end
 
-integrateK!(elm::Beam)=FEBeam.integrateK!(elm)
-integrateK!(elm::Quad)=FEQuad.integrateK!(elm)
-integrateK!(elm::Tria)=FETria.integrateK!(elm)
-
-integrateKσ(elm::Beam,σ)=FEBeam.integrateKσ(elm,σ)
-
-integrateM!(elm::Beam)=FEBeam.integrateM!(elm)
-integrateM!(elm::Quad)=FEQuad.integrateM!(elm)
-integrateM!(elm::Tria)=FETria.integrateM!(elm)
-
-integrateP!(elm::Beam,force)=FEBeam.integrateP!(elm,force)
-integrateP!(elm::Quad,force)=FEQuad.integrateP!(elm,force)
-integrateP!(elm::Tria,force)=FETria.integrateP!(elm,force)
+# integrateK!(elm::Beam)=FEBeam.integrateK!(elm)
+# integrateK!(elm::Quad)=FEQuad.integrateK!(elm)
+# integrateK!(elm::Tria)=FETria.integrateK!(elm)
+#
+# integrateKσ(elm::Beam,σ)=FEBeam.integrateKσ(elm,σ)
+#
+# integrateM!(elm::Beam)=FEBeam.integrateM!(elm)
+# integrateM!(elm::Quad)=FEQuad.integrateM!(elm)
+# integrateM!(elm::Tria)=FETria.integrateM!(elm)
+#
+# integrateP!(elm::Beam,force)=FEBeam.integrateP!(elm,force)
+# integrateP!(elm::Quad,force)=FEQuad.integrateP!(elm,force)
+# integrateP!(elm::Tria,force)=FETria.integrateP!(elm,force)
 
 end

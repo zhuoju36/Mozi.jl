@@ -1,18 +1,18 @@
-module FETria
+# module FETria
+#
+# using LinearAlgebra
+# using SparseArrays
+# using Logging
+#
+# using HCubature
+#
+# using ...CoordinateSystem
+# using ..FEMaterial
+# using ..FENode
+#
+# export Tria
 
-using LinearAlgebra
-using SparseArrays
-using Logging
-
-using HCubature
-
-using ...CoordinateSystem
-using ..FEMaterial
-using ..FENode
-
-export Tria
-
-mutable struct Tria
+mutable struct Tria <: AbstractElement
     id::String
     hid::Int
 
@@ -65,7 +65,7 @@ function Tria(id,hid,node1,node2,node3,material,t;membrane=true,bending=true)
     Tria(id,hid,node1,node2,node3,material,t,membrane,bending,o,A,T,Kbᵉ,Kmᵉ,Kᵉ,Mᵉ)
 end
 
-function integrateKm!(elm)
+function integrateKm!(elm::Tria)
     E₀,ν₀=elm.material.E,elm.material.ν
     center=elm.center
     t=elm.t
@@ -113,7 +113,7 @@ function integrateKm!(elm)
 end
 
 #WIP
-function integrateKb!(elm)
+function integrateKb!(elm::Tria)
     E₀,ν₀=elm.material.E,elm.material.ν
     center=elm.center
     t=elm.t
@@ -146,7 +146,7 @@ function integrateK!(elm::Tria)
 end
 
 #WIP
-function integrateKσ(elm::Tria,σ)
+function integrateKσ(elm::Tria,σ::Vector{Float64})
     E₀,ν₀=elm.material.E,elm.material.ν
     center=elm.center
     t=elm.t
@@ -216,7 +216,7 @@ function integrateM!(elm::Tria)
     elm.Mᵉ=M
 end
 
-function integrateP(elm,elm_force)
+function integrateP(elm::Tria,elm_force)
     N=elm.N
     B=elm.B
     D=elm.D
@@ -251,4 +251,4 @@ function integrateP(elm,elm_force)
     Pᵉ=Pᵉ_f+Pᵉ_s+Pᵉ_σ₀+Pᵉ_ϵ₀
 end
 
-end
+# end

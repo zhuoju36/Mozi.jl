@@ -1,3 +1,5 @@
+export result_nodal_reaction,result_nodal_displacement,result_nodal_time_history
+
 """
    result_nodal_displacement(assembly,lc_id,node_id)
 获取已求解的assembly实例的单个节点位移
@@ -126,11 +128,4 @@ function result_nodal_time_history(assembly,lc_id,node_id,value=0,dir=1)
         u=read_matrix(path*"/.analysis",lc_id*"_a.m")
     end
     u[6*hid-6+dir,:]
-end
-
-function result_cable_force(assembly,id)
-
-end
-
-function result_link_force(assembly,id)
 end

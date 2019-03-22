@@ -11,7 +11,7 @@ include("./result/Result.jl")
 
 using .FEStructure
 using .LoadCase
-using .AssemblyModule
+using .FEAssembly
 using .Solver
 using .Result
 

@@ -1,15 +1,3 @@
-
-using LinearAlgebra
-using SparseArrays
-
-using HCubature
-using Arpack
-using DSP
-
-if USE_PARDISO
-    import Pardiso
-end
-
 include("../util/numeric.jl")
 
 function solve_modal_eigen(structure,loadcase,restrainedDOFs::Vector{Int};path=pwd())
@@ -303,81 +291,6 @@ function solve_HHT_alpha(structure,loadcase,restrainedDOFs::Vector{Int};path=pwd
         end
         ā[:,t+1]=c₀*(ū[:,t+1]-ū[:,t])-c₂*v̄[:,t]-c₃*ā[:,t]
         v̄[:,t+1]=v̄[:,t]+c₆*ā[:,t]+c₇*ā[:,t+1]
-    end
-    @info "------------------------------ 求解完成 ------------------------------"
-
-    u=zeros(size(structure.K,1),length(T))
-    v=zeros(size(structure.K,1),length(T))
-    a=zeros(size(structure.K,1),length(T))
-    for t in 1:length(T)
-        u[:,t]=resolve_BC(ū[:,t],restrainedDOFs)
-        v[:,t]=resolve_BC(v̄[:,t],restrainedDOFs)
-        a[:,t]=resolve_BC(ā[:,t],restrainedDOFs)
-    end
-    return u,v,a
-end
-
-function solve_wilson_theta(structure,loadcase,restrainedDOFs::Vector{Int};path=pwd())
-    @info "----------------------- 求解Wilson-θ法逐步积分 -----------------------"
-    T=loadcase.t
-    Δt=(T[end]-T[1])/(length(T)-1)
-
-    β=loadcase.β
-    γ=loadcase.γ
-    θ=loadcase.θ
-
-    if !(θ<1.37)
-        @warn "算法可能不稳定"
-    end
-
-    K̄=introduce_BC(structure.K,restrainedDOFs)
-    M̄=introduce_BC(structure.M,restrainedDOFs)
-    C̄=introduce_BC(structure.C,restrainedDOFs)
-    P̄=introduce_BC(loadcase.P,restrainedDOFs)
-    Q̄=loadcase.f'.*P̄
-    u₀=zeros(size(K̄,1))
-    v₀=zeros(size(K̄,1))
-
-    Δt̄=θ*Δt
-    b₁=1/(β*Δt^2)
-    b₂=-1/(β*Δt̄)
-    b₃=(1/2-β)/β
-    b₄=γ*Δt̄*b₁
-    b₅=1+γ*Δt̄*b₂
-    b₆=Δt̄*(1+γ*b₃-γ)
-
-    K̂=K̄+b₁*M̄+b₄*C̄
-    LDLᵀ=ldlt(Symmetric(K̂))
-
-    ū=Array{Float64,2}(undef,length(u₀),length(T))
-    v̄=Array{Float64,2}(undef,length(v₀),length(T))
-    ā=Array{Float64,2}(undef,length(v₀),length(T))
-    ū[:,1]=u₀
-    v̄[:,1]=v₀
-
-    if USE_PARDISO
-        ps=Pardiso.MKLPardisoSolver()
-        Pardiso.set_matrixtype!(ps,1)
-        a₀=Pardiso.solve(ps,M̄,(Q̄[:,1]-C̄*v₀-K̄*u₀)[:,1])
-    else
-        a₀=Symmetric(M̄) \ (Q̄[:,1]-C̄*v₀-K̄*u₀)[:,1]
-    end
-
-    ā[:,1]=a₀
-    for t in 1:length(T)-1
-        Q̂=Q̄[:,t+1]+M̄*(b₁*ū[:,t]+b₂*v̄[:,t]+b₃*ā[:,t])+C̄*(b₄*ū[:,t]+b₅*v̄[:,t]+b₆*ā[:,t])
-        Q̂=reshape(Q̂,length(Q̂))
-        if USE_PARDISO
-            ū[:,t+1]=Pardiso.solve(ps,K̂,Q̂) #May LDLT here
-        else
-            ū[:,t+1]=Symmetric(K̂) \ Q̂
-        end
-        v̄[:,t+1]=b₄*(ū[:,t+1]-ū[:,t])+b₅*v̄[:,t]+b₆*ā[:,t]
-        ā[:,t+1]=b₁*(ū[:,t+1]-ū[:,t])+b₂*v̄[:,t]+b₃*ā[:,t]
-
-        ā[:,t+1]=ā[:,t]+1/θ*(ā[:,t+1]-ā[:,t])
-        v̄[:,t+1]=v̄[:,t]+((1-γ)*ā[:,t]+γ*ā[:,t+1])*Δt
-        ū[:,t+1]=ū[:,t]+v̄[:,t]*Δt
     end
     @info "------------------------------ 求解完成 ------------------------------"
 

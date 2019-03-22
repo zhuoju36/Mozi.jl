@@ -1,9 +1,9 @@
-module FEMaterial
-using LinearAlgebra
-
-using ...Enums
-
-export Material,IsoElastic,UniAxialMetal
+# module FEMaterial
+# using LinearAlgebra
+#
+# using ...Enums
+#
+# export Material,IsoElastic,UniAxialMetal
 
 struct Material
     id::String
@@ -36,4 +36,4 @@ function UniAxialMetal(id,hid,E,ν,ρ,α,E₂,f,fᵤ)
     Material(id,hid,mat_type,E,ν,ρ,α,G,λ,E₂,f,fᵤ)
 end
 
-end
+# end

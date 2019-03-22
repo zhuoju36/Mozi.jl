@@ -1,8 +1,8 @@
-module FESection
-
-using ...Enums
-
-export BeamSection,RectangleSection,ISection,HSection,BoxSection,PipeSection,CircleSection
+# module FESection
+#
+# using ...Enums
+#
+# export BeamSection,RectangleSection,ISection,HSection,BoxSection,PipeSection,CircleSection
 
 struct BeamSection
     id::String
@@ -130,4 +130,4 @@ function CircleSection(id,hid,d)::BeamSection
     BeamSection(id,hid,A,I₂,I₃,J,As₂,As₃,W₂,W₃,Enums.CIRCLE,[d])
 end
 
-end
+# end

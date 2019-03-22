@@ -1,18 +1,18 @@
-module FEQuad
+# module FEQuad
+#
+# using LinearAlgebra
+# using SparseArrays
+# using Logging
+#
+# using HCubature
+#
+# using ...CoordinateSystem
+# using ..FEMaterial
+# using ..FENode
+#
+# export Quad
 
-using LinearAlgebra
-using SparseArrays
-using Logging
-
-using HCubature
-
-using ...CoordinateSystem
-using ..FEMaterial
-using ..FENode
-
-export Quad
-
-mutable struct Quad
+mutable struct Quad <: AbstractElement
     id::String
     hid::Int
 
@@ -437,7 +437,7 @@ function integrateK!(elm::Quad)::SparseMatrixCSC{Float64}
     elm.Kᵉ=Kᵉ
 end
 
-function integrateKσ(elm::Quad,σ)
+function integrateKσ(elm::Quad,σ)::Vector{Float64}
     E₀,ν₀=elm.material.E,elm.material.ν
     center=elm.center
     t=elm.t
@@ -484,7 +484,7 @@ function integrateKσ(elm::Quad,σ)
     Kσ=hquadrature(GtΣG,[-1,1],[1,1])
 end
 
-function integrateKu(elm::Quad,u)
+function integrateKu(elm::Quad,u::Vector{Float64})
     E₀,ν₀=elm.material.E,elm.material.ν
     center=elm.center
     t=elm.t
@@ -522,7 +522,7 @@ end
 #     return K
 # end
 
-function integrateM!(elm::Quad)
+function integrateM!(elm::Quad)::SparseMatrixCSC{Float64}
     membrane,bending=elm.membrane,elm.bending
     ρ=elm.material.ρ
     center=elm.center
@@ -547,7 +547,7 @@ function integrateM!(elm::Quad)
     elm.Mᵉ=sparse(hcubature(ρNtN,[-1,1],[1,1])[1])*t
 end
 
-function integrateP(elm,elm_force)
+function integrateP(elm,elm_force)::Vector{Float64}
     N=elm.N
     B=elm.B
     D=elm.D
@@ -582,4 +582,4 @@ function integrateP(elm,elm_force)
     Pᵉ=Pᵉ_f+Pᵉ_s+Pᵉ_σ₀+Pᵉ_ϵ₀
 end
 
-end
+# end

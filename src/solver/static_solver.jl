@@ -1,25 +1,15 @@
-using LinearAlgebra
-using SparseArrays
-using Logging
-
-using Arpack
-
-using ..FEStructure
-
-if USE_PARDISO
-    import Pardiso
-end
-
 export solve_linear_static,solve_linear_eigen
 
 function introduce_BC(K::SparseMatrixCSC{Float64},restrainedDOFs::Vector{Int})
     nDOF=size(K,1)
     mask=[(i in restrainedDOFs) ? false : true for i in 1:nDOF]
-    if size(K,2)==1
-        return K[mask]
-    else
-        return K[mask,mask]
-    end
+    return K[mask,mask]
+end
+
+function introduce_BC(K::Vector{Float64},restrainedDOFs::Vector{Int})
+    nDOF=size(K,1)
+    mask=[(i in restrainedDOFs) ? false : true for i in 1:nDOF]
+    return K[mask]
 end
 
 function resolve_BC(d̄::Vector{Float64},restrainedDOFs::Vector{Int})

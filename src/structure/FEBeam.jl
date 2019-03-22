@@ -1,17 +1,17 @@
-module FEBeam
+# module FEBeam
+#
+# using LinearAlgebra
+# using SparseArrays
+# using HCubature
+#
+# using ...CoordinateSystem
+# using ..FEMaterial
+# using ..FENode
+# using ..FESection
+#
+# export Beam,static_condensation
 
-using LinearAlgebra
-using SparseArrays
-using HCubature
-
-using ...CoordinateSystem
-using ..FEMaterial
-using ..FENode
-using ..FESection
-
-export Beam,static_condensation
-
-mutable struct Beam
+mutable struct Beam <: AbstractElement
     id::String
     hid::Int
     node1::Node
@@ -236,4 +236,4 @@ function integrateP!(beam::Beam,beam_force)
     return beam.Pᵉ
 end
 
-end
+# end

@@ -1,17 +1,29 @@
 module Solver
 
+using LinearAlgebra
+using SparseArrays
+using Logging
+
+using HCubature
+using Arpack
+using DSP
+
 const USE_PARDISO=false
+if USE_PARDISO
+    import Pardiso
+end
+
+using ..FEStructure
+using ..LoadCase
+using ..FEAssembly
 
 include("./static_solver.jl")
 include("./dynamic_solver.jl")
-
 include("../util/mmp.jl")
-
-using ..LoadCase
 
 export solve
 
-function DFSsolve(lc_node,structure,restrainedDOFs::Vector{Int},path)
+function DFSsolve(lc_node::FEAssembly.LCNode,structure::Structure,restrainedDOFs::Vector{Int},path)
     if lc_node.case!="root"
         solve_case(structure,lc_node.case,restrainedDOFs,path)
     end
@@ -24,7 +36,7 @@ function DFSsolve(lc_node,structure,restrainedDOFs::Vector{Int},path)
     end
 end
 
-function solve_case(structure,loadcase,restrainedDOFs::Vector{Bool},path)
+function solve_case(structure,loadcase,restrainedDOFs::Vector{Int},path)
     working_dir=joinpath(path,".analysis")
     if is_static(loadcase)
         if loadcase.nl_type=="1st"

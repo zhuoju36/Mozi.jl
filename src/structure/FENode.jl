@@ -1,10 +1,10 @@
-module FENode
-
-using ...CoordinateSystem
-using LinearAlgebra
-using SparseArrays
-
-export Node
+# module FENode
+#
+# using ...CoordinateSystem
+# using LinearAlgebra
+# using SparseArrays
+#
+# export Node
 
 mutable struct Node
     id::String
@@ -29,4 +29,4 @@ function Node(id,hid::Int,x::Float64,y::Float64,z::Float64)
     Node(string(id),hid,o,T,restraints,spring,mass)
 end
 
-end
+# end
