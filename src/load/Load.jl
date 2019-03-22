@@ -7,6 +7,8 @@ using HCubature
 export NodalForce,NodalDisp,
 BeamForce,QuadForce
 
+abstract type AbstractElementForce end
+
 struct NodalForce
     id::String
     val::Vector{Float64}
@@ -21,7 +23,7 @@ struct NodalDisp
     NodalDisp(id,disp,csys="global")=new(id,disp,csys)
 end
 
-mutable struct BeamForce
+mutable struct BeamForce  <: AbstractElementForce
     id::String
     f::Array{Float64}
     s::Array{Float64}
@@ -30,7 +32,7 @@ mutable struct BeamForce
     BeamForce(id)=new(id,zeros(12,1),zeros(12,1),zeros(2,1),zeros(2,1))
 end
 
-mutable struct QuadForce
+mutable struct QuadForce  <: AbstractElementForce
     id::String
     f::Array{Float64}
     s::Array{Float64}

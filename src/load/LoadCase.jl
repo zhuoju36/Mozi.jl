@@ -7,7 +7,7 @@ using SparseArrays
 using ..Enums
 using .Load
 
-export LoadCaseSet
+export LoadCaseSet,AbstractLoadCase
 
 # export StaticCase,ModalCase,BucklingCase,TimeHistoryCase,ResponseSpectrumCase
 
@@ -20,7 +20,9 @@ add_beam_distributed!,add_beam_strain!
 export set_modal_params!,set_buckling_params!,set_time_history_params!
 export is_static, is_modal, is_buckling, is_time_history, is_response_spectrum, get_all_id
 
-mutable struct StaticCase
+abstract type AbstractLoadCase end
+
+mutable struct StaticCase <: AbstractLoadCase
     id::String
     hid::Int
 
@@ -50,7 +52,7 @@ mutable struct StaticCase
         zeros(1))
 end
 
-mutable struct ModalCase
+mutable struct ModalCase <: AbstractLoadCase
     id::String
     hid::Int
 
@@ -76,7 +78,7 @@ mutable struct ModalCase
         zeros(1))
 end
 
-mutable struct BucklingCase
+mutable struct BucklingCase <: AbstractLoadCase
     id::String
     hid::Int
 
@@ -116,7 +118,7 @@ mutable struct BucklingCase
         zeros(1))
 end
 
-mutable struct TimeHistoryCase
+mutable struct TimeHistoryCase <: AbstractLoadCase
     id::String
     hid::Int
 
@@ -158,7 +160,7 @@ mutable struct TimeHistoryCase
         zeros(1))
 end
 
-mutable struct ResponseSpectrumCase
+mutable struct ResponseSpectrumCase <: AbstractLoadCase
     id::String
     hid::Int
 

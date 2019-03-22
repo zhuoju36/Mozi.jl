@@ -5,17 +5,19 @@ using SparseArrays
 using HCubature
 
 using ...CoordinateSystem
-import ..FENode
+using ..FEMaterial
+using ..FENode
+using ..FESection
 
 export Beam,static_condensation
 
 mutable struct Beam
     id::String
     hid::Int
-    node1
-    node2
-    material
-    section
+    node1::Node
+    node2::Node
+    material::Material
+    section::BeamSection
 
     release::Vector{Bool}
 
@@ -53,7 +55,7 @@ function Beam(id,hid,node1,node2,material,section)
     Beam(string(id),hid,node1,node2,material,section,release,l,T,K̄,M̄,P̄,K,M,P)
 end
 
-function integrateK!(beam::Beam)::SparseMatrixCSC
+function integrateK!(beam::Beam)::SparseMatrixCSC{Float64}
     E,ν=beam.material.E,beam.material.ν
     A,I₂,I₃,J,l=beam.section.A,beam.section.I₂,beam.section.I₃,beam.section.J,beam.l
     As₂,As₃=beam.section.As₂,beam.section.As₃
@@ -96,7 +98,7 @@ function integrateK!(beam::Beam)::SparseMatrixCSC
     return sparse(beam.Kᵉ)
 end
 
-function integrateKσ(beam::Beam,σ)::SparseMatrixCSC
+function integrateKσ(beam::Beam,σ::Vector{Float64})::SparseMatrixCSC{Float64}
     E,ν=beam.material.E,beam.material.ν
     A,I₂,I₃,J,l=beam.section.A,beam.section.I₂,beam.section.I₃,beam.section.J,beam.l
     As₂,As₃=beam.section.As₂,beam.section.As₃

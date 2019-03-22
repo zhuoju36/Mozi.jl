@@ -11,7 +11,7 @@ using ..LoadCase
 
 export solve
 
-function DFSsolve(lc_node,structure,restrainedDOFs,path)
+function DFSsolve(lc_node,structure,restrainedDOFs::Vector{Bool},path)
     if lc_node.case!="root"
         solve_case(structure,lc_node.case,restrainedDOFs,path)
     end
@@ -24,7 +24,7 @@ function DFSsolve(lc_node,structure,restrainedDOFs,path)
     end
 end
 
-function solve_case(structure,loadcase,restrainedDOFs,path)
+function solve_case(structure,loadcase,restrainedDOFs::Vector{Bool},path)
     working_dir=joinpath(path,".analysis")
     if is_static(loadcase)
         if loadcase.nl_type=="1st"
@@ -75,7 +75,7 @@ function solve_case(structure,loadcase,restrainedDOFs,path)
             write_matrix(working_dir,loadcase.id*"_v.m",loadcase.hid,v)
             write_matrix(working_dir,loadcase.id*"_a.m",loadcase.hid,a)
         elseif loadcase.algorithm=="HHT"
-            u,v,a=solve_newmark_beta(structure,loadcase,restrainedDOFs,path=path)
+            u,v,a=solve_HHT_alpha(structure,loadcase,restrainedDOFs,path=path)
             write_matrix(working_dir,loadcase.id*"_u.m",loadcase.hid,u)
             write_matrix(working_dir,loadcase.id*"_v.m",loadcase.hid,v)
             write_matrix(working_dir,loadcase.id*"_a.m",loadcase.hid,a)

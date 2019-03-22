@@ -12,7 +12,7 @@ end
 
 export solve_linear_static,solve_linear_eigen
 
-function introduce_BC(K,restrainedDOFs)
+function introduce_BC(K::SparseMatrixCSC{Float64},restrainedDOFs::Vector{Bool})
     nDOF=size(K,1)
     mask=[(i in restrainedDOFs) ? false : true for i in 1:nDOF]
     if size(K,2)==1
@@ -22,7 +22,7 @@ function introduce_BC(K,restrainedDOFs)
     end
 end
 
-function resolve_BC(d̄,restrainedDOFs)
+function resolve_BC(d̄::Vector{Float64},restrainedDOFs::Vector{Bool})
     rows=Array(1:length(d̄))
     cols=Array(1:length(d̄))
     vals=ones(length(d̄))
@@ -39,7 +39,7 @@ function resolve_BC(d̄,restrainedDOFs)
     return Array(d)
 end
 
-function K₂(structure,d₀)::SparseMatrixCSC
+function K₂(structure::Structure,d₀::Vector{Float64})::SparseMatrixCSC{Float64}
     nDOF=length(structure.nodes)*6
     restrainedDOFs=[]
     K=spzeros(nDOF,nDOF)
@@ -71,7 +71,7 @@ function K₂(structure,d₀)::SparseMatrixCSC
     return K
 end
 
-function solve_linear_static(structure,loadcase,restrainedDOFs)
+function solve_linear_static(structure::Structure,loadcase,restrainedDOFs::Vector{Bool})
     @info "-------------------------- 求解一阶线性工况 ---------------------------" 工况=loadcase.id
     K̄=introduce_BC(structure.K,restrainedDOFs)
     P̄=introduce_BC(loadcase.P,restrainedDOFs)
@@ -91,7 +91,7 @@ function solve_linear_static(structure,loadcase,restrainedDOFs)
     return u,P
 end
 
-function solve_linear_buckling(structure,loadcase,restrainedDOFs;path=pwd())
+function solve_linear_buckling(structure::Structure,loadcase,restrainedDOFs::Vector{Bool};path=pwd())
     @info "-------------------------- 求解屈曲模态特征值 --------------------------" 工况=loadcase.id 前一步基础工况=loadcase.plc
     K=structure.K
     P=loadcase.P
@@ -117,7 +117,7 @@ function solve_linear_buckling(structure,loadcase,restrainedDOFs;path=pwd())
     return ω²,ϕ
 end
 
-function solve_2nd_static(structure,loadcase,restrainedDOFs;conv_tol=1e-16,steps=10,max_iter=20,path=pwd())
+function solve_2nd_static(structure::Structure,loadcase,restrainedDOFs::Vector{Bool};conv_tol=1e-16,steps=10,max_iter=20,path=pwd())
     @info "------------------------ 求解二阶几何非线性工况 ------------------------" 工况=loadcase.id 前一步基础工况=loadcase.plc
     K=structure.K
     P=loadcase.P
