@@ -256,7 +256,7 @@ function solve_HHT_alpha(structure,loadcase,restrainedDOFs::Vector{Int};path=pwd
         @warn "算法可能不精确"
     end
     c₀=1/(β*Δt^2)
-    c₁=γ/(β*Δt)
+    c₁=α*γ/(β*Δt)
     c₂=1/(β*Δt)
     c₃=1/(2*β)-1
     c₄=γ/β-1
@@ -264,7 +264,8 @@ function solve_HHT_alpha(structure,loadcase,restrainedDOFs::Vector{Int};path=pwd
     c₆=Δt*(1-γ)
     c₇=γ*Δt
 
-    K̂=K̄+c₀*M̄+c₁*C̄
+    K̂=α*K̄+c₀*M̄+c₁*C̄
+
     LDLᵀ=ldlt(Symmetric(K̂))
 
     ū=Array{Float64,2}(undef,length(u₀),length(T))
@@ -283,6 +284,7 @@ function solve_HHT_alpha(structure,loadcase,restrainedDOFs::Vector{Int};path=pwd
     ā[:,1]=a₀
     for t in 1:length(T)-1
         Q̂=Q̄[:,t+1]+M̄*(c₀*ū[:,t]+c₂*v̄[:,t]+c₃*ā[:,t])+C̄*(c₁*ū[:,t]+c₄*v̄[:,t]+c₅*ā[:,t])
+
         Q̂=reshape(Q̂,length(Q̂))
         if USE_PARDISO
             ū[:,t+1]=Pardiso.solve(ps,K̂,Q̂) #May LDLT here
@@ -291,14 +293,6 @@ function solve_HHT_alpha(structure,loadcase,restrainedDOFs::Vector{Int};path=pwd
         end
         ā[:,t+1]=c₀*(ū[:,t+1]-ū[:,t])-c₂*v̄[:,t]-c₃*ā[:,t]
         v̄[:,t+1]=v̄[:,t]+c₆*ā[:,t]+c₇*ā[:,t+1]
-
-        u=(1-α)*u[:,t]+α*u[:,t+1]
-        v=(1-α)*v[:,t]+α*v[:,t+1]
-        Q̂=Q̄[:,t+1]-M̄*a[:,t+1]-C̄*v[:,t+1]-
-        K̂=α*K̄+(α*γ/β/Δt)*C̄+(1/β/Δt^2)*M̄
-        R̂=F-F?-C̄*v-M*a
-
-
     end
     @info "------------------------------ 求解完成 ------------------------------"
 

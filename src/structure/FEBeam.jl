@@ -21,6 +21,10 @@ mutable struct Beam <: AbstractElement
 
     release::Vector{Bool}
 
+    elm_type::String
+    mass_type::String
+
+    center::Vector{Float64}
     l::Float64
     T::Matrix{Float64} #transform_matrix
     K̄ᵉ::SparseMatrixCSC{Float64}#condensed
@@ -31,7 +35,7 @@ mutable struct Beam <: AbstractElement
     Pᵉ::SparseMatrixCSC{Float64}
 end
 
-function Beam(id,hid,node1,node2,material,section)
+function Beam(id,hid,node1,node2,material,section;elm_type="eular_shear",mass_type="concentrate")
     tol=1e-6
     o=node1.loc
     pt1=node2.loc
@@ -52,108 +56,30 @@ function Beam(id,hid,node1,node2,material,section)
     K=spzeros(12,12)
     M=spzeros(12,12)
     P=spzeros(12,1)
-    Beam(string(id),hid,node1,node2,material,section,release,l,T,K̄,M̄,P̄,K,M,P)
+    Beam(string(id),hid,node1,node2,material,section,release,elm_type,mass_type,(pt1+pt2)/2,l,T,K̄,M̄,P̄,K,M,P)
+end
+
+for (root,dirs,files) in walkdir(joinpath(@__DIR__,"beams"))
+    for file in files
+        if file[end-2:end]==".jl"
+            include(joinpath(@__DIR__,"beams",file))
+        end
+    end
 end
 
 function integrateK!(beam::Beam)::SparseMatrixCSC{Float64}
-    E,ν=beam.material.E,beam.material.ν
-    A,I₂,I₃,J,l=beam.section.A,beam.section.I₂,beam.section.I₃,beam.section.J,beam.l
-    As₂,As₃=beam.section.As₂,beam.section.As₃
-    G=E/2/(1+ν)
-    ϕ₂,ϕ₃=12E*I₃/(G*As₂*l^2),12E*I₂/(G*As₃*l^2)
-    K=zeros(12,12)
-    K[1,1]=E*A/l
-    K[2,2]=12E*I₃/l^3/(1+ϕ₂)
-    K[3,3]=12E*I₂/l^3/(1+ϕ₃)
-    K[4,4]=G*J/l
-    K[5,5]=(4+ϕ₃)*E*I₂/l/(1+ϕ₃)
-    K[6,6]=(4+ϕ₂)*E*I₃/l/(1+ϕ₂)
-    K[7,7]=E*A/l
-    K[8,8]=12E*I₃/l^3/(1+ϕ₂)
-    K[9,9]=12E*I₂/l^3/(1+ϕ₃)
-    K[10,10]=G*J/l
-    K[11,11]=(4+ϕ₃)*E*I₂/l/(1+ϕ₃)
-    K[12,12]=(4+ϕ₂)*E*I₃/l/(1+ϕ₂)
-
-    K[3,5]=K[5,3]=-6E*I₂/l^2/(1+ϕ₃)
-    K[6,8]=K[8,6]=-6E*I₃/l^2/(1+ϕ₂)
-    K[9,11]=K[11,9]=6E*I₂/l^2/(1+ϕ₃)
-
-    K[2,6]=K[6,2]=6E*I₃/l^2/(1+ϕ₂)
-    K[5,9]=K[9,5]=6E*I₂/l^2/(1+ϕ₃)
-    K[8,12]=K[12,8]=-6E*I₃/l^2/(1+ϕ₂)
-
-    K[7,1]=K[1,7]=-E*A/l
-    K[8,2]=K[2,8]=-12E*I₃/l^3/(1+ϕ₂)
-    K[9,3]=K[3,9]=-12E*I₂/l^3/(1+ϕ₃)
-    K[10,4]=K[4,10]=-G*J/l
-    K[11,5]=K[5,11]=(2-ϕ₃)*E*I₂/l/(1+ϕ₃)
-    K[12,6]=K[6,12]=(2-ϕ₂)*E*I₃/l/(1+ϕ₂)
-
-    K[3,11]=K[11,3]=-6E*I₂/l^2/(1+ϕ₃)
-
-    K[2,12]=K[12,2]=6E*I₃/l^2/(1+ϕ₂)
-
+    if beam.elm_type=="eular_shear"
+        K=K_eular_shear(beam::Beam)
+    end
     beam.Kᵉ=K
-    return sparse(beam.Kᵉ)
 end
 
 function integrateKσ(beam::Beam,σ::Vector{Float64})::SparseMatrixCSC{Float64}
-    E,ν=beam.material.E,beam.material.ν
-    A,I₂,I₃,J,l=beam.section.A,beam.section.I₂,beam.section.I₃,beam.section.J,beam.l
-    As₂,As₃=beam.section.As₂,beam.section.As₃
-    G=E/2/(1+ν)
-    T=σ*A
-
-    ϕ₂,ϕ₃=12E*I₃/(G*As₂*l^2),12E*I₂/(G*As₃*l^2)
-    K=zeros(12,12)
-
-    K[2,2]=(6/5+2ϕ₂+ϕ₂^2)/(1+ϕ₂)^2
-    K[3,3]=(6/5+2ϕ₃+ϕ₃^2)/(1+ϕ₃)^2
-    K[4,4]=J/A
-    K[5,5]=(2*l^2/15+l^2*ϕ₃/6+l^2*ϕ₃^2/12)/(1+ϕ₃)^2
-    K[6,6]=(2*l^2/15+l^2*ϕ₂/6+l^2*ϕ₂^2/12)/(1+ϕ₂)^2
-    K[8,8]=(6/5+2ϕ₂+ϕ₂^2)/(1+ϕ₂)^2
-    K[9,9]=(6/5+2ϕ₃+ϕ₃^2)/(1+ϕ₃)^2
-    K[10,10]=J/A
-    K[11,11]=(2*l^2/15+l^2*ϕ₃/6+l^2*ϕ₃^2/12)/(1+ϕ₃)^2
-    K[12,12]=(2*l^2/15+l^2*ϕ₂/6+l^2*ϕ₂^2/12)/(1+ϕ₂)^2
-
-    K[3,5]=K[5,3]=-(l/10)/(1+ϕ₃)^2
-    K[6,8]=K[8,6]=-(l/10)/(1+ϕ₂)^2
-    K[9,11]=K[11,9]=(l/10)/(1+ϕ₃)^2
-
-    K[2,6]=K[6,2]=(l/10)/(1+ϕ₂)^2
-    K[5,9]=K[9,5]=(l/10)/(1+ϕ₃)^2
-
-    K[2,8]=K[8,2]=-(6/5+2ϕ₂+ϕ₂^2)/(1+ϕ₂)^2
-    K[3,9]=K[9,3]=-(6/5+2ϕ₃+ϕ₃^2)/(1+ϕ₃)^2
-    K[4,10]=K[10,4]=-J/A
-    K[5,11]=K[11,5]=-(l^2/30+l^2*ϕ₃/6+l^2*ϕ₃^2/12)/(1+ϕ₃)^2
-    K[6,12]=K[12,6]=-(l^2/30+l^2*ϕ₂/6+l^2*ϕ₂^2/12)/(1+ϕ₂)^2
-
-    K[3,11]=K[11,3]=-(l/10)/(1+ϕ₃)^2
-
-    K[2,12]=K[12,2]=(l/10)/(1+ϕ₂)^2
-
-    Kᵉ=T/l*K
-    return sparse(Kᵉ)
+    if beam.elm_type=="eular_shear"
+        K=K2_eular_shear(beam::Beam)
+    end
+    Kᵉ=K
 end
-
-# function integrateK!(beam,p_delta=false,σ₀=0)::SparseMatrixCSC
-#     Kᵉ=integrateKi(beam)
-#     if p_delta
-#         Kᵉ+=integrateKσ(beam,σ₀)
-#     end
-#     beam.K̄ᵉ=Kᵉ
-#     rDOF=findall(x->x==true,beam.release)
-#     if length(rDOF)!=0
-#         beam.Kᵉ=sparse(static_condensation(Array(beam.K̄ᵉ),zeros(12),rDOF)[1])
-#     else
-#         beam.Kᵉ=beam.K̄ᵉ
-#     end
-#     return Kᵉ
-# end
 
 function static_condensation(K,P,rDOF)
     i=[!(x in rDOF) for x in 1:12]
@@ -177,11 +103,10 @@ function integrateM!(beam::Beam)
     A,I₂,I₃,J,l=beam.section.A,beam.section.I₂,beam.section.I₃,beam.section.J,beam.l
     ρ=beam.material.ρ
     beam.M̄ᵉ=sparse(Matrix(I,12,12)*12*ρ*A*l/2)
-    rDOF=findall(x->x==true,beam.release)
-    if length(rDOF)!=0
+    if beam.mass_type=="concentrate"
         beam.Mᵉ=sparse(Matrix(I,12,12)*12*ρ*A*l/2)
-    else
-        beam.Mᵉ=beam.M̄ᵉ
+    elseif beam.mass_type=="coordinate"
+        beam.Mᵉ=sparse(Matrix(I,12,12)*12*ρ*A*l/2)
     end
     return beam.Mᵉ
 end

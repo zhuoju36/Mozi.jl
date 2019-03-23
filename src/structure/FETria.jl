@@ -65,6 +65,14 @@ function Tria(id,hid,node1,node2,node3,material,t;membrane=true,bending=true)
     Tria(id,hid,node1,node2,node3,material,t,membrane,bending,o,A,T,Kbᵉ,Kmᵉ,Kᵉ,Mᵉ)
 end
 
+for (root,dirs,files) in walkdir(joinpath(@__DIR__,"trias"))
+    for file in files
+        if file[end-2:end]==".jl"
+            include(joinpath(@__DIR__,"trias",file))
+        end
+    end
+end
+
 function integrateKm!(elm::Tria)
     E₀,ν₀=elm.material.E,elm.material.ν
     center=elm.center
