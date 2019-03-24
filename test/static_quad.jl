@@ -1,4 +1,4 @@
-# 
+#
 # include("../src/Mozi.jl")
 # using Test
 # using Logging
@@ -46,6 +46,7 @@ solve(assembly)
 r=result_nodal_displacement(assembly,"MEMB",4)
 @show r
 r=result_nodal_displacement(assembly,"BEND",4)
+@show r
 @test r≈[0.0, 0.0, -1.06318, 0.799041, 0.226482, 0.0] atol=1e-3
 
 @showbanner "Isoparam quad test"

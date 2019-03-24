@@ -1,3 +1,5 @@
+#Reference:
+#须寅, 龙驭球. 采用广义协调条件构造具有旋转自由度的四边形膜元[J]. 工程力学, 1993, 10(3): 27―36.
 function K_GQ12(elm::Quad)::SparseMatrixCSC{Float64}
     E₀,ν₀=elm.material.E,elm.material.ν
     center=elm.center

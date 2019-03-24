@@ -1,9 +1,3 @@
-# module FESection
-#
-# using ...Enums
-#
-# export BeamSection,RectangleSection,ISection,HSection,BoxSection,PipeSection,CircleSection
-
 struct BeamSection
     id::String
     hid::Int

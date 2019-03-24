@@ -1,3 +1,5 @@
+#Reference
+#岑松, 龙志飞, 龙驭球. 对转角场和剪应变场进行合理插值的厚薄板通用四边形单元[J]. 工程力学, 1999,16(4): 1―15.
 function K_TMQ(elm::Quad)::SparseMatrixCSC{Float64}
     E₀,ν₀=elm.material.E,elm.material.ν
     center=elm.center
@@ -134,7 +136,6 @@ function K_TMQ(elm::Quad)::SparseMatrixCSC{Float64}
             Kb[i,j]=Kb[j,i]=-Kb[i,j]
         end
     end
-
     return L'*sparse(Kb)*L
 end
 

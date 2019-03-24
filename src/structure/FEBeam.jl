@@ -1,16 +1,3 @@
-# module FEBeam
-#
-# using LinearAlgebra
-# using SparseArrays
-# using HCubature
-#
-# using ...CoordinateSystem
-# using ..FEMaterial
-# using ..FENode
-# using ..FESection
-#
-# export Beam,static_condensation
-
 mutable struct Beam <: AbstractElement
     id::String
     hid::Int

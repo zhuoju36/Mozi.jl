@@ -1,17 +1,3 @@
-# module FEQuad
-#
-# using LinearAlgebra
-# using SparseArrays
-# using Logging
-#
-# using HCubature
-#
-# using ...CoordinateSystem
-# using ..FEMaterial
-# using ..FENode
-#
-# export Quad
-
 mutable struct Quad <: AbstractElement
     id::String
     hid::Int
@@ -22,9 +8,9 @@ mutable struct Quad <: AbstractElement
     node4::Node
     material::Material
     t::Float64
-
-    membrane::Bool
-    bending::Bool
+    t2::Float64
+    t3::Float64
+    t4::Float64
 
     elm_type::String
     mass_type::String
@@ -40,7 +26,7 @@ mutable struct Quad <: AbstractElement
     Mᵉ::SparseMatrixCSC{Float64}
 end
 
-function Quad(id,hid,node1,node2,node3,node4,material,t,membrane=true,bending=true;elm_type="TMQ",mass_type="concentrate")
+function Quad(id,hid,node1,node2,node3,node4,material,t,t2=0,t3=0,t4=0,elm_type="TMQ",mass_type="concentrate")
     #Initialize local CSys,could be optimized by using a MSE plane
     o=(node1.loc+node2.loc+node3.loc+node4.loc)/4
     pt1 = (node2.loc+node3.loc)/2
@@ -107,7 +93,7 @@ function Quad(id,hid,node1,node2,node3,node4,material,t,membrane=true,bending=tr
     Kᵉ=spzeros(1,1)
     Mᵉ=spzeros(1,1)
 
-    Quad(id,hid,node1,node2,node3,node4,material,t,membrane,bending,elm_type,mass_type,o,A,T,Kbᵉ,Kmᵉ,Kᵉ,Mᵉ)
+    Quad(id,hid,node1,node2,node3,node4,material,t,t2,t3,t4,elm_type,mass_type,o,A,T,Kbᵉ,Kmᵉ,Kᵉ,Mᵉ)
 end
 
 for (root,dirs,files) in walkdir(joinpath(@__DIR__,"quads"))
@@ -118,38 +104,20 @@ for (root,dirs,files) in walkdir(joinpath(@__DIR__,"quads"))
     end
 end
 
-function integrateKm!(elm::Quad)::SparseMatrixCSC{Float64}
-    if elm.elm_type=="TMQ"
-        Km=K_GQ12(elm)
-    end
-    elm.Kmᵉ=Km
-end
-
-function integrateKb!(elm::Quad)::SparseMatrixCSC{Float64}
-    if elm.elm_type=="TMQ"
-        Kb=K_TMQ(elm)
-    end
-    elm.Kbᵉ=Kb
-end
-
 function integrateK!(elm::Quad)::SparseMatrixCSC{Float64}
-    membrane,bending=elm.membrane,elm.bending
     Kᵉ=spzeros(24,24)
-    if membrane
-        I=1:12
-        J=[1,2,6,7,8,12,13,14,18,19,20,24]
-        L=sparse(I,J,1.,12,24)
-        Km=integrateKm!(elm)
-        Kᵉ+=L'*Km*L
+    if elm.elm_type=="GQ12"
+        K=K_GQ12(elm)
+    elseif elm.elm_type=="TMQ"
+        K=K_TMQ(elm)
+    elseif elm.elm_type=="DKQ"
+        K=K_DKQ(elm)
+    elseif elm.elm_type=="DKGQ"
+        K=K_DKGQ(elm)
+    else
+        throw("Quad element type error!")
     end
-    if bending
-        I=1:12
-        J=[3,4,5,9,10,11,15,16,17,21,22,23]
-        L=sparse(I,J,1.,12,24)
-        Kb=integrateKb!(elm)
-        Kᵉ+=L'*Kb*L
-    end
-    elm.Kᵉ=Kᵉ
+    elm.Kᵉ=K
 end
 
 function integrateKσ(elm::Quad,σ)::Vector{Float64}
@@ -238,7 +206,6 @@ end
 # end
 
 function integrateM!(elm::Quad)::SparseMatrixCSC{Float64}
-    membrane,bending=elm.membrane,elm.bending
     ρ=elm.material.ρ
     center=elm.center
     t=elm.t

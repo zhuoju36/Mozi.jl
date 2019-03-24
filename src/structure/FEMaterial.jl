@@ -1,10 +1,3 @@
-# module FEMaterial
-# using LinearAlgebra
-#
-# using ...Enums
-#
-# export Material,IsoElastic,UniAxialMetal
-
 struct Material
     id::String
     hid::Int

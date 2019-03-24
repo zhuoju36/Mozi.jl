@@ -332,7 +332,7 @@ end
 - `mat_id`: 材料id
 - `t`: 截面厚度
 """
-function add_quad!(structure,id,i,j,k,l,mat_id,t;membrane=true,plate=true)
+function add_quad!(structure,id,i,j,k,l,mat_id,t;t2=0,t3=0,t4=0,elm_type="DKGQ",mass_type="concentrate")
     id=string(id)
     hid=length(structure.quads)+1
     if id in keys(structure.quads)
@@ -352,13 +352,13 @@ function add_quad!(structure,id,i,j,k,l,mat_id,t;membrane=true,plate=true)
     node3=structure.nodes[k]
     node4=structure.nodes[l]
     material=structure.materials[mat_id]
-    quad=Quad(id,hid,node1,node2,node3,node4,material,t,membrane,plate)
+    quad=Quad(id,hid,node1,node2,node3,node4,material,t,t2,t3,t4,elm_type,mass_type)
     structure.quads[id]=quad
 end
 
 """
     set_quad_rotation!(structure,id,degree)
-向structure实例加入quad单元
+设置单元局部坐标系转角
 # Arguments
 - `structure`: Structure类型实例
 - `id`: 单元id

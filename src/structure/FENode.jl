@@ -1,11 +1,3 @@
-# module FENode
-#
-# using ...CoordinateSystem
-# using LinearAlgebra
-# using SparseArrays
-#
-# export Node
-
 mutable struct Node
     id::String
     hid::Int #attribute by system, not by user

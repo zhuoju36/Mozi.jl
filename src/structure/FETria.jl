@@ -1,17 +1,3 @@
-# module FETria
-#
-# using LinearAlgebra
-# using SparseArrays
-# using Logging
-#
-# using HCubature
-#
-# using ...CoordinateSystem
-# using ..FEMaterial
-# using ..FENode
-#
-# export Tria
-
 mutable struct Tria <: AbstractElement
     id::String
     hid::Int
