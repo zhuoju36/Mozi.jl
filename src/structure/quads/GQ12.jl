@@ -165,5 +165,14 @@ function K_GQ12(elm::Quad)::SparseMatrixCSC{Float64}
 
         return K*det(J)*t
     end
-    return sparse(hcubature(BtDB,[-1,-1],[1,1])[1])
+    K=sparse(hcubature(BtDB,[-1,-1],[1,1])[1])
+    #12x12 to 24x24
+    I=1:12
+    J=[1,2,6,7,8,12,13,14,18,19,20,24]
+    L=sparse(I,J,1.,12,24)
+    return L'*K*L
+end
+
+function P_GQ12(elm::Quad)::Vector{Float64}
+    return zeros(12)
 end

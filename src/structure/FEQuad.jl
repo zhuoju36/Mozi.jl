@@ -19,14 +19,11 @@ mutable struct Quad <: AbstractElement
     A::Float64
     T::SparseMatrixCSC{Float64}
 
-    Kmᵉ::SparseMatrixCSC{Float64}
-    Kbᵉ::SparseMatrixCSC{Float64}
-
     Kᵉ::SparseMatrixCSC{Float64}
     Mᵉ::SparseMatrixCSC{Float64}
 end
 
-function Quad(id,hid,node1,node2,node3,node4,material,t,t2=0,t3=0,t4=0,elm_type="TMQ",mass_type="concentrate")
+function Quad(id,hid,node1,node2,node3,node4,material,t,t2=0,t3=0,t4=0,elm_type="TMGQ",mass_type="concentrate")
     #Initialize local CSys,could be optimized by using a MSE plane
     o=(node1.loc+node2.loc+node3.loc+node4.loc)/4
     pt1 = (node2.loc+node3.loc)/2
@@ -87,13 +84,10 @@ function Quad(id,hid,node1,node2,node3,node4,material,t,t2=0,t3=0,t4=0,elm_type=
     end
     T=sparse(T)
 
-    Kbᵉ=spzeros(1,1)
-    Kmᵉ=spzeros(1,1)
-
     Kᵉ=spzeros(1,1)
     Mᵉ=spzeros(1,1)
 
-    Quad(id,hid,node1,node2,node3,node4,material,t,t2,t3,t4,elm_type,mass_type,o,A,T,Kbᵉ,Kmᵉ,Kᵉ,Mᵉ)
+    Quad(id,hid,node1,node2,node3,node4,material,t,t2,t3,t4,elm_type,mass_type,o,A,T,Kᵉ,Mᵉ)
 end
 
 for (root,dirs,files) in walkdir(joinpath(@__DIR__,"quads"))
@@ -114,6 +108,8 @@ function integrateK!(elm::Quad)::SparseMatrixCSC{Float64}
         K=K_DKQ(elm)
     elseif elm.elm_type=="DKGQ"
         K=K_DKGQ(elm)
+    elseif elm.elm_type=="TMGQ"
+        K=K_TMGQ(elm)
     else
         throw("Quad element type error!")
     end
@@ -229,39 +225,19 @@ function integrateM!(elm::Quad)::SparseMatrixCSC{Float64}
     elm.Mᵉ=sparse(hcubature(ρNtN,[-1,1],[1,1])[1])*t
 end
 
-function integrateP(elm,elm_force)::Vector{Float64}
-    N=elm.N
-    B=elm.B
-    D=elm.D
-    J=elm.J
-
-    f,s,σ₀,ϵ₀=elmforce.f,elmforce.s,elmforce.σ₀,elmforce.ϵ₀
-    a=[-1 -1]
-    b=[1 1]
-
-    function f1(x)
-        N'*f*det(J)
+function integrateP!(elm::Quad,elm_force)
+    if elm.elm_type=="GQ12"
+        P=P_GQ12(elm)
+    elseif elm.elm_type=="TMQ"
+        P=P_TMQ(elm)
+    elseif elm.elm_type=="DKQ"
+        P=P_DKQ(elm)
+    elseif elm.elm_type=="DKGQ"
+        P=P_DKGQ(elm)
+    elseif elm.elm_type=="TMGQ"
+        P=P_TMGQ(elm)
+    else
+        throw("Quad element type error!")
     end
-
-    function f2(x)
-        N'*s*det(J)
-    end
-
-    function f3(x)
-        x->B'*σ₀*det(J)
-    end
-
-    function f4(x)
-        x->B'*D*ϵ₀*det(J)
-    end
-
-    Pᵉ_f=hquadrature(f1,a,b)
-    Pᵉ_s=hquadrature(f2,[-1],[1])#ξ=-1
-    Pᵉ_σ₀=hquadrature(f3,a,b)
-    Pᵉ_ϵ₀=hquadrature(f4,a,b)
-
-    Pᵉ_f,Pᵉ_s,Pᵉ_σ₀,Pᵉ_ϵ₀=calc_force(elm,elm_force) #Pᵉ=Pᵉf+Pᵉs+Pᵉσ₀+Pᵉϵ₀
-    Pᵉ=Pᵉ_f+Pᵉ_s+Pᵉ_σ₀+Pᵉ_ϵ₀
+    elm.Pᵉ=P
 end
-
-# end

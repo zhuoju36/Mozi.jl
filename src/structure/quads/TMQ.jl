@@ -122,7 +122,7 @@ function K_TMQ(elm::Quad)::SparseMatrixCSC{Float64}
 
         Kb=transpose(Bb)*D*Bb
         Ks=transpose(Bs)*C*Bs
-        K=Kb#+Ks
+        K=Kb+Ks
 
         return K*det(J)
     end
@@ -136,7 +136,12 @@ function K_TMQ(elm::Quad)::SparseMatrixCSC{Float64}
             Kb[i,j]=Kb[j,i]=-Kb[i,j]
         end
     end
-    return L'*sparse(Kb)*L
+    K=L'*sparse(Kb)*L
+    #12x12 to 24x24
+    I=1:12
+    J=[3,4,5,9,10,11,15,16,17,21,22,23]
+    L=sparse(I,J,1.,12,24)
+    return L'*K*L
 end
 
 function K2_TMQ(elm::Quad)::SparseMatrixCSC{Float64}

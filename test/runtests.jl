@@ -5,6 +5,8 @@ using Mozi
 
 const PATH=pwd()
 
+include("./parser.jl")
+
 macro showbanner(word,total=99)
     n=length(word)
     m=(total-n)÷2
@@ -18,11 +20,15 @@ macro showbanner(word,total=99)
     println()
 end
 
+# include("./quads/element_test.jl")
+include("./trias/element_test.jl")
+
+
 # include("./static_cantilever.jl")
 # include("./dynamic_cantilever.jl")
 # include("./buckling_cantilever.jl")
 
-include("./static_quad.jl")
+# include("./static_quad.jl")
 # include("./dynamic_quad.jl")
 # include("./buckling_quad.jl")
 

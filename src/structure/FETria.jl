@@ -7,22 +7,21 @@ mutable struct Tria <: AbstractElement
     node3::Node
     material::Material
     t::Float64
+    t2::Float64
+    t3::Float64
 
-    membrane::Bool
-    bending::Bool
+    elm_type::String
+    mass_type::String
 
     center::Array{Float64}
     A::Float64
     T::SparseMatrixCSC{Float64}
 
-    Kmᵉ::SparseMatrixCSC{Float64}
-    Kbᵉ::SparseMatrixCSC{Float64}
-
     Kᵉ::SparseMatrixCSC{Float64}
     Mᵉ::SparseMatrixCSC{Float64}
 end
 
-function Tria(id,hid,node1,node2,node3,material,t;membrane=true,bending=true)
+function Tria(id,hid,node1,node2,node3,material,t,t2=0,t3=0,elm_type="TMT",mass_type="concentrate")
     #Initialize local CSys,could be optimized by using a MSE plane
     o=(node1.loc+node2.loc+node3.loc)/3
     pt1 = (node1.loc+node2.loc)/2
@@ -48,7 +47,7 @@ function Tria(id,hid,node1,node2,node3,material,t;membrane=true,bending=true)
     Kᵉ=spzeros(1,1)
     Mᵉ=spzeros(1,1)
 
-    Tria(id,hid,node1,node2,node3,material,t,membrane,bending,o,A,T,Kbᵉ,Kmᵉ,Kᵉ,Mᵉ)
+    Tria(id,hid,node1,node2,node3,material,t,t2,t3,elm_type,mass_type,o,A,T,Kᵉ,Mᵉ)
 end
 
 for (root,dirs,files) in walkdir(joinpath(@__DIR__,"trias"))
@@ -59,84 +58,22 @@ for (root,dirs,files) in walkdir(joinpath(@__DIR__,"trias"))
     end
 end
 
-function integrateKm!(elm::Tria)
-    E₀,ν₀=elm.material.E,elm.material.ν
-    center=elm.center
-    t=elm.t
-    A=elm.A
-    T=elm.T[1:3,1:3]
-    x₁,y₁,z₁=T*(elm.node1.loc-center)
-    x₂,y₂,z₂=T*(elm.node2.loc-center)
-    x₃,y₃,z₃=T*(elm.node3.loc-center)
-
-    a₁=x₂*y₃-x₃*y₂
-    a₂=x₃*y₁-x₁*y₃
-    a₃=x₁*y₂-x₂*y₁
-
-    b₁=y₂-y₃
-    b₂=y₃-y₁
-    b₃=y₁-y₂
-
-    c₁=-x₂+x₃
-    c₂=-x₃+x₁
-    c₃=-x₁+x₂
-
-    # N₁=(a₁+b₁*x+c₁*y)/2/A
-    # N₂=(a₂+b₂*x+c₂*y)/2/A
-    # N₃=(a₃+b₃*x+c₃*y)/2/A
-    #
-    # N=[N₁ 0 N₂ 0 N₃ 0;
-    #     0 N₁ 0 N₂ 0 N₃]
-
-    B₁=[b₁ 0;
-        0 c₁;
-        c₁ b₁]
-    B₂=[b₂ 0;
-        0 c₂;
-        c₂ b₂]
-    B₃=[b₃ 0;
-        0 c₃;
-        c₃ b₃]
-
-    B=[B₁ B₂ B₃]/2A
-    D₀=E₀/(1-ν₀^2)
-    D=D₀*[1 ν₀ 0;
-          ν₀ 1 0;
-          0 0 (1-ν₀)/2]
-    elm.Kmᵉ=B'*D*B*t*A
-end
-
-#WIP
-function integrateKb!(elm::Tria)
-    E₀,ν₀=elm.material.E,elm.material.ν
-    center=elm.center
-    t=elm.t
-    T=elm.T[1:3,1:3]
-    x₁,y₁,z₁=T*(elm.node1.loc-center)
-    x₂,y₂,z₂=T*(elm.node2.loc-center)
-    x₃,y₃,z₃=T*(elm.node3.loc-center)
-    # elm.Kbᵉ=sparse(hcubature(BtDB,[-1,1],[1,1])[1])
-    elm.Kbᵉ=spzeros(9,9)
-end
-
 function integrateK!(elm::Tria)
-    membrane,bending=elm.membrane,elm.bending
     Kᵉ=spzeros(18,18)
-    if membrane
-        I=1:6
-        J=[1,2,7,8,13,14]
-        L=sparse(I,J,1.,6,18)
-        Km=integrateKm!(elm)
-        Kᵉ+=L'*Km*L
+    if elm.elm_type=="GT9"
+        K=K_GT9(elm)
+    elseif elm.elm_type=="TMT"
+        K=K_TMT(elm)
+    # elseif elm.elm_type=="DKT"
+    #     K=K_DKT(elm)
+    # elseif elm.elm_type=="DKGT"
+    #     K=K_DKGT(elm)
+    elseif elm.elm_type=="TMGT"
+        K=K_TMGT(elm)
+    else
+        throw("Quad element type error!")
     end
-    if bending
-        I=1:9
-        J=[3,4,5,9,10,11,15,16,17]
-        L=sparse(I,J,1.,9,18)
-        Kb=integrateKb!(elm)
-        Kᵉ+=L'*Kb*L
-    end
-    elm.Kᵉ=Kᵉ
+    elm.Kᵉ=K
 end
 
 #WIP
