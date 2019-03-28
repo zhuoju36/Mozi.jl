@@ -1,7 +1,7 @@
 name = "Mozi"
 uuid = "938b0b66-b18d-59c3-b436-87bb841ccf42"
 authors = ["HZJ <zhuoju36@hotmail.com>"]
-version = "0.0.1"
+version = "0.0.3"
 
 [deps]
 Arpack = "7d9fca2a-8960-54d3-9f78-7d1dccf2cb97"
