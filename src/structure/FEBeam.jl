@@ -28,9 +28,9 @@ function Beam(id,hid,node1,node2,material,section;elm_type="eular_shear",mass_ty
     pt1=node2.loc
     pt2=node1.loc
     if abs(pt2[1]-pt1[1])<tol && abs(pt2[2]-pt1[2])<tol
-        pt2=pt2+[1,0,0]
+        pt2=pt2.+[1,0,0]
     else
-        pt2=pt2+[0,0,1]
+        pt2=pt2.+[0,0,1]
     end
     csys=CSys(o,pt1,pt2)
     T=zeros(12,12)
@@ -68,7 +68,10 @@ function integrateKσ(beam::Beam,σ::Vector{Float64})::SparseMatrixCSC{Float64}
     Kᵉ=K
 end
 
-function static_condensation(K,P,rDOF)
+function static_condensation(K,P,rDOF::Vector{Int})
+    if isempty(rDOF)
+        return K,P
+    end
     i=[!(x in rDOF) for x in 1:12]
     j=[(x in rDOF) for x in 1:12]
     Kᵢᵢ=K[i,i]

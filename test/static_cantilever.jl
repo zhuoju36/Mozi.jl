@@ -19,6 +19,8 @@ solve(assembly)
 
 r=result_nodal_reaction(assembly,"DL",1)
 @test r≈[-2.83076e-10,-9.04954e-10,8926.15,53556.9,-80335.3,-3.29473e-8] atol=1e-1
+r=result_nodal_displacement(assembly,"DL",2)
+@test r≈[0.454025, 0.302683, -0.98385, -0.0336002, 0.0504003, -5.77725e-13] atol=1e-3
 
 @info "---------- Modal test ----------"
 clear_result!(assembly)

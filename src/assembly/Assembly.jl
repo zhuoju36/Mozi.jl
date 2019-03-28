@@ -48,6 +48,43 @@ function DFSfind(lcnode::LCNode,lc::String)
     end
 end
 
+function TG(node::FEStructure.Node,nDOF)
+    i=node.hid
+    I=collect(1:6)
+    J=collect(6i-5:6i)
+    G=sparse(I,J,1.0,6,nDOF)
+    sparse(node.T)*sparse(I,J,1.0,6,nDOF)
+end
+
+function TG(elm::FEStructure.Beam,nDOF)
+    i = elm.node1.hid
+    j = elm.node2.hid
+    I=collect(1:12)
+    J=[6i-5:6i;6j-5:6j]
+    sparse(elm.T)*sparse(I,J,1.0,12,nDOF)
+end
+
+function TG(elm::FEStructure.Quad,nDOF)
+    i = elm.node1.hid
+    j = elm.node2.hid
+    k = elm.node3.hid
+    l = elm.node4.hid
+    I=collect(1:24)
+    J=[6i-5:6i;6j-5:6j;6k-5:6k;6l-5:6l]
+    sparse(elm.T)*sparse(I,J,1.0,24,nDOF)
+end
+
+function TG(elm::FEStructure.Tria,nDOF)
+    i = elm.node1.hid
+    j = elm.node2.hid
+    k = elm.node3.hid
+    I=collect(1:18)
+    J=[6i-5:6i;6j-5:6j;6k-5:6k]
+    sparse(elm.T)*sparse(I,J,1.0,18,nDOF)
+end
+
+AtBA(A::SparseMatrixCSC,B::SparseMatrixCSC)=A'*B*A
+
 """
     assemble!(structure,lcset;path=pwd())
 集成结构与工况
@@ -110,87 +147,69 @@ function assemble!(structure,lcset;mass_source="weight",mass_cases=[],mass_cases
     sort!(restrainedDOFs)
     mask=[(i in restrainedDOFs) ? false : true for i in 1:nDOF]
 
-    for elm in values(structure.beams)
-        i = elm.node1.hid
-        j = elm.node2.hid
-        T=sparse(elm.T)
-
-        I=collect(1:12)
-        J=[6i-5:6i;6j-5:6j]
-        G=sparse(I,J,1.0,12,nDOF)
-
-        Kᵉ=integrateK!(elm)
-        Mᵉ=integrateM!(elm)
-
-        A=T*G
-
-        rDOF=findall(x->x==true,elm.release)
-        if length(rDOF)!=0
-            K̄ᵉ,P̄ᵉ=FEStructure.FEBeam.static_condensation(Array(elm.Kᵉ),elm.Pᵉ,rDOF)
-            K̄ᵉ=sparse(K̄ᵉ)
-            K+=A'*K̄ᵉ*A
-        else
-            K+=A'*Kᵉ*A
-        end
-        M+=A'*Mᵉ*A
+    # for elm in values(structure.beams)
+    #     i = elm.node1.hid
+    #     j = elm.node2.hid
+    #     T=sparse(elm.T)
+    #
+    #     I=collect(1:12)
+    #     J=[6i-5:6i;6j-5:6j]
+    #     G=sparse(I,J,1.0,12,nDOF)
+    #
+    #     Kᵉ=integrateK!(elm)
+    #     Mᵉ=integrateM!(elm)
+    #
+    #     A=T*G
+    #
+    #     rDOF=findall(x->x==true,elm.release)
+    #     if length(rDOF)!=0
+    #         K̄ᵉ,P̄ᵉ=FEStructure.FEBeam.static_condensation(Array(elm.Kᵉ),elm.Pᵉ,rDOF)
+    #         K̄ᵉ=sparse(K̄ᵉ)
+    #         K+=A'*K̄ᵉ*A
+    #     else
+    #         K+=A'*Kᵉ*A
+    #     end
+    #     M+=A'*Mᵉ*A
+    # end
+@time begin
+    if node_count>0
+        tg=TG.(values(structure.nodes),nDOF)
+        k=integrateK!.(values(structure.nodes))
+        m=integrateM!.(values(structure.nodes))
+        K+=reduce(+,AtBA.(tg,k))
+        M+=reduce(+,AtBA.(tg,m))
     end
+end
 
-    for elm in values(structure.quads)
-        i = elm.node1.hid
-        j = elm.node2.hid
-        k = elm.node3.hid
-        l = elm.node4.hid
-
-        T=sparse(elm.T)
-
-        I=collect(1:24)
-        J=[6i-5:6i;6j-5:6j;6k-5:6k;6l-5:6l]
-        G=sparse(I,J,1.0,24,nDOF)
-
-        Kᵉ=integrateK!(elm)
-        Mᵉ=integrateM!(elm)
-
-        A=T*G
-        K+=A'*Kᵉ*A
-        M+=A'*Mᵉ*A
+@time begin
+    if beam_count>0
+        tg=TG.(values(structure.beams),nDOF)
+        k=integrateK!.(values(structure.beams))
+        m=integrateM!.(values(structure.beams))
+        K+=reduce(+,AtBA.(tg,k))
+        M+=reduce(+,AtBA.(tg,m))
     end
+end
 
-    for elm in values(structure.trias)
-        i = elm.node1.hid
-        j = elm.node2.hid
-        k = elm.node3.hid
-
-        T=sparse(elm.T)
-
-        I=collect(1:18)
-        J=[6i-5:6i;6j-5:6j;6k-5:6k]
-        G=sparse(I,J,1.,18,nDOF)
-
-        Kᵉ=integrateK!(elm)
-        Mᵉ=integrateM!(elm)
-
-        A=T*G
-        K+=A'*Kᵉ*A
-        M+=A'*Mᵉ*A
+@time begin
+    if quad_count>0
+        tg=TG.(values(structure.quads),nDOF)
+        k=integrateK!.(values(structure.quads))
+        m=integrateM!.(values(structure.quads))
+        K+=reduce(+,AtBA.(tg,k))
+        M+=reduce(+,AtBA.(tg,m))
     end
+end
 
-    for node in values(structure.nodes)
-        T=node.T
-        spring=T'*node.spring
-        mass=T'*node.mass
-        idx=node.hid*6-6
-        Kⁿ=sparse(Diagonal(spring))
-        Mⁿ=sparse(Diagonal(mass))
-
-        i=node.hid
-        I=collect(1:6)
-        J=collect(6i-5:6i)
-        G=sparse(I,J,1.0,6,nDOF)
-
-        A=T*G
-        K+=A'*Kⁿ*A
-        M+=A'*Mⁿ*A
+@time begin
+    if tria_count>0
+        tg=TG.(values(structure.trias),nDOF)
+        k=integrateK!.(values(structure.trias))
+        m=integrateM!.(values(structure.trias))
+        K+=reduce(+,AtBA.(tg,k))
+        M+=reduce(+,AtBA.(tg,m))
     end
+end
 
     if structure.damp=="constant"
         C=sparse(structure.ζ₁*I,nDOF,nDOF)
@@ -219,21 +238,10 @@ function assemble!(structure,lcset;mass_source="weight",mass_cases=[],mass_cases
     #add quad / tria gravity
     for load in values(_gset.statics["__Gravity__"].beam_forces)
         elm=structure.beams[load.id]
-        i = elm.node1.hid
-        j = elm.node2.hid
-        T=sparse(elm.T)
-        I=collect(1:12)
-        J=[6i-5:6i;6j-5:6j]
-        G=sparse(I,J,1.0,12,nDOF)
         Pᵉ=integrateP!(elm,load)
-
         rDOF=findall(x->x==true,elm.release)
-        if length(rDOF)!=0
-            K̄ᵉ,P̄ᵉ=FEStructure.FEBeam.static_condensation(Array(elm.Kᵉ),elm.Pᵉ,rDOF)
-            Pg+=G'*T'*P̄ᵉ
-        else
-            Pg+=G'*T'*Pᵉ
-        end
+        K̄ᵉ,P̄ᵉ=FEStructure.static_condensation(Array(elm.Kᵉ),elm.Pᵉ,rDOF)
+        Pg+=TG(elm,nDOF)'*P̄ᵉ
     end
 
     cases=merge(lcset.statics,lcset.bucklings,lcset.time_histories)
@@ -241,35 +249,19 @@ function assemble!(structure,lcset;mass_source="weight",mass_cases=[],mass_cases
         loadcase=cases[l]
         P=spzeros(nDOF,1)
         if l in keys(lcset.statics)
-            P+=Pg*loadcase.gfactor
+            P.+=Pg*loadcase.gfactor
         end
         for load in values(loadcase.beam_forces)
             elm=structure.beams[load.id]
-            i = elm.node1.hid
-            j = elm.node2.hid
-            T=sparse(elm.T)
-            I=collect(1:12)
-            J=[6i-5:6i;6j-5:6j]
-            G=sparse(I,J,1.0,12,nDOF)
             Pᵉ=integrateP!(elm,load)
             rDOF=findall(x->x==true,elm.release)
-            if length(rDOF)!=0
-                K̄ᵉ,P̄ᵉ=FEStructure.FEBeam.static_condensation(Array(elm.Kᵉ),elm.Pᵉ,rDOF)
-                Pg+=G'*T'*P̄ᵉ
-            else
-                Pg+=G'*T'*Pᵉ
-            end
+            K̄ᵉ,P̄ᵉ=FEStructure.static_condensation(Array(elm.Kᵉ),elm.Pᵉ,rDOF)
+            P.+=TG(elm,nDOF)'*P̄ᵉ
         end
-
         for load in values(loadcase.nodal_forces)
             node=structure.nodes[load.id]
-            i = node.hid
-            T=sparse(node.T)
-            I=collect(1:6)
-            J=collect(6i-5:6i)
-            G=sparse(I,J,1.0,6,nDOF)
             Pⁿ=reshape(load.val,6,1)
-            P+=G'*T'*Pⁿ
+            P.+=TG(node,nDOF)'*Pⁿ
         end
         cases[l].P=Array(P)[:,1]
     end
