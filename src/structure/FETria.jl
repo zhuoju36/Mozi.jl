@@ -1,3 +1,4 @@
+export Tria
 mutable struct Tria <: AbstractElement
     id::String
     hid::Int
@@ -15,10 +16,7 @@ mutable struct Tria <: AbstractElement
 
     center::Array{Float64}
     A::Float64
-    T::SparseMatrixCSC{Float64}
-
-    Kᵉ::SparseMatrixCSC{Float64}
-    Mᵉ::SparseMatrixCSC{Float64}
+    T::Matrix{Float64}
 end
 
 function Tria(id,hid,node1,node2,node3,material,t,t2=0,t3=0,elm_type="TMT",mass_type="concentrate")
@@ -39,15 +37,8 @@ function Tria(id,hid,node1,node2,node3,material,t,t2=0,t3=0,elm_type="TMT",mass_
     for i in 1:6
         T[3i-2:3i,3i-2:3i]=csys.T
     end
-    T=sparse(T)
 
-    Kbᵉ=spzeros(1,1)
-    Kmᵉ=spzeros(1,1)
-
-    Kᵉ=spzeros(1,1)
-    Mᵉ=spzeros(1,1)
-
-    Tria(id,hid,node1,node2,node3,material,t,t2,t3,elm_type,mass_type,o,A,T,Kᵉ,Mᵉ)
+    Tria(id,hid,node1,node2,node3,material,t,t2,t3,elm_type,mass_type,o,A,T)
 end
 
 for (root,dirs,files) in walkdir(joinpath(@__DIR__,"trias"))
@@ -58,22 +49,20 @@ for (root,dirs,files) in walkdir(joinpath(@__DIR__,"trias"))
     end
 end
 
-function integrateK!(elm::Tria)
-    Kᵉ=spzeros(18,18)
+function integrateK(elm::Tria)
     if elm.elm_type=="GT9"
-        K=K_GT9(elm)
+        return K_GT9(elm)
     elseif elm.elm_type=="TMT"
-        K=K_TMT(elm)
+        return K_TMT(elm)
     # elseif elm.elm_type=="DKT"
     #     K=K_DKT(elm)
     # elseif elm.elm_type=="DKGT"
     #     K=K_DKGT(elm)
     elseif elm.elm_type=="TMGT"
-        K=K_TMGT(elm)
+        return K_TMGT(elm)
     else
         throw("Quad element type error!")
     end
-    elm.Kᵉ=K
 end
 
 #WIP
@@ -173,10 +162,10 @@ function integrateP(elm::Tria,elm_force)
         x->B'*D*ϵ₀*det(J)
     end
 
-    Pᵉ_f=hTriarature(f1,a,b)
-    Pᵉ_s=hTriarature(f2,[-1],[1])#ξ=-1
-    Pᵉ_σ₀=hTriarature(f3,a,b)
-    Pᵉ_ϵ₀=hTriarature(f4,a,b)
+    Pᵉ_f=hquadrature(f1,a,b)
+    Pᵉ_s=hquadrature(f2,[-1],[1])#ξ=-1
+    Pᵉ_σ₀=hquadrature(f3,a,b)
+    Pᵉ_ϵ₀=hquadrature(f4,a,b)
 
     Pᵉ_f,Pᵉ_s,Pᵉ_σ₀,Pᵉ_ϵ₀=calc_force(elm,elm_force) #Pᵉ=Pᵉf+Pᵉs+Pᵉσ₀+Pᵉϵ₀
     Pᵉ=Pᵉ_f+Pᵉ_s+Pᵉ_σ₀+Pᵉ_ϵ₀

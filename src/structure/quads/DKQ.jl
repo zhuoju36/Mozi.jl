@@ -1,6 +1,6 @@
 #Reference:
 #Batoz J L, Tahar M B. Evaluation of a new quadrilateral thin plate bending element [J]. International Journal for Numerical Methods in Engineering, 1982, 18(11): 1655―1677.
-function K_DKQ(elm::Quad)::SparseMatrixCSC{Float64}
+function K_DKQ(elm::Quad)::Matrix{Float64}
     E₀,ν₀=elm.material.E,elm.material.ν
     center=elm.center
     t=elm.t
@@ -61,7 +61,7 @@ function K_DKQ(elm::Quad)::SparseMatrixCSC{Float64}
               0  0 (1-ν₀)/2]
         return transpose(B)*D*B*detJ
     end
-    K=sparse(hcubature(BtDB,[-1,-1],[1,1],initdiv=2)[1])
+    K=hcubature(BtDB,[-1,-1],[1,1],initdiv=2)[1]
     #12x12 to 24x24
     I=1:12
     J=[3,4,5,9,10,11,15,16,17,21,22,23]

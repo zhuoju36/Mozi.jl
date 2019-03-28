@@ -1,6 +1,6 @@
 #Reference
 #岑松, 龙志飞, 龙驭球. 对转角场和剪应变场进行合理插值的厚薄板通用四边形单元[J]. 工程力学, 1999,16(4): 1―15.
-function K_TMQ(elm::Quad)::SparseMatrixCSC{Float64}
+function K_TMQ(elm::Quad)::Matrix{Float64}
     E₀,ν₀=elm.material.E,elm.material.ν
     center=elm.center
     t=elm.t
@@ -126,7 +126,7 @@ function K_TMQ(elm::Quad)::SparseMatrixCSC{Float64}
 
         return K*det(J)
     end
-    Kb=sparse(hcubature(BtDB,[-1,-1],[1,1])[1])
+    Kb=hcubature(BtDB,[-1,-1],[1,1])[1]
     #left-hand system to right-hand system
     I=1:12
     J=[1,3,2,4,6,5,7,9,8,10,12,11]
@@ -136,7 +136,7 @@ function K_TMQ(elm::Quad)::SparseMatrixCSC{Float64}
             Kb[i,j]=Kb[j,i]=-Kb[i,j]
         end
     end
-    K=L'*sparse(Kb)*L
+    K=L'*Kb*L
     #12x12 to 24x24
     I=1:12
     J=[3,4,5,9,10,11,15,16,17,21,22,23]
@@ -144,6 +144,6 @@ function K_TMQ(elm::Quad)::SparseMatrixCSC{Float64}
     return L'*K*L
 end
 
-function K2_TMQ(elm::Quad)::SparseMatrixCSC{Float64}
+function K2_TMQ(elm::Quad)::Matrix{Float64}
     spzeros(24,24)
 end

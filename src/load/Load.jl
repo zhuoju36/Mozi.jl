@@ -25,19 +25,19 @@ end
 
 mutable struct BeamForce  <: AbstractElementForce
     id::String
-    f::Array{Float64}
-    s::Array{Float64}
-    σ₀::Array{Float64}
-    ϵ₀::Array{Float64}
-    BeamForce(id)=new(id,zeros(12,1),zeros(12,1),zeros(2,1),zeros(2,1))
+    f::Vector{Float64}
+    s::Vector{Float64}
+    σ₀::Vector{Float64}
+    ϵ₀::Vector{Float64}
+    BeamForce(id)=new(id,zeros(12),zeros(12),zeros(2),zeros(2))
 end
 
 mutable struct QuadForce  <: AbstractElementForce
     id::String
-    f::Array{Float64}
-    s::Array{Float64}
-    σ₀::Array{Float64}
-    ϵ₀::Array{Float64}
+    f::Vector{Float64}
+    s::Vector{Float64}
+    σ₀::Vector{Float64}
+    ϵ₀::Vector{Float64}
     QuadForce(id)=new(id,zeros(24,1),zeros(24,1),zeros(4,1),zeros(4,1))
 end
 

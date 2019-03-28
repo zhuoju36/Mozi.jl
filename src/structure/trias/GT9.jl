@@ -1,6 +1,6 @@
 #Reference:
 #须寅, 龙驭球, 龙志飞等. 引入泡状位移含旋转自由度的广义协调三角形膜元[J]. 工程力学, 2000, 17(3): 1-9.
-function K_GT9(elm::Tria)::SparseMatrixCSC{Float64}
+function K_GT9(elm::Tria)::Matrix{Float64}
     E₀,ν₀=elm.material.E,elm.material.ν
     center=elm.center
     t=elm.t
@@ -100,7 +100,7 @@ function K_GT9(elm::Tria)::SparseMatrixCSC{Float64}
         K[9,9]=0.25*b₃*(-0.5*b₁*(a₂ + x*b₂ + y*c₂)/A + 0.5*b₂*(a₁ + x*b₁ + y*c₁)/A)*(0.25*b₃*E₀*(-0.5*b₁*(a₂ + x*b₂ + y*c₂)/A + 0.5*b₂*(a₁ + x*b₁ + y*c₁)/A)/(A*(1 - ν₀^2)) + 0.25*c₃*E₀*ν₀*(-0.5*c₁*(a₂ + x*b₂ + y*c₂)/A + 0.5*c₂*(a₁ + x*b₁ + y*c₁)/A)/(A*(1 - ν₀^2)))/A + 0.25*c₃*(0.25*c₃*E₀*(-0.5*c₁*(a₂ + x*b₂ + y*c₂)/A + 0.5*c₂*(a₁ + x*b₁ + y*c₁)/A)/(A*(1 - ν₀^2)) + 0.25*b₃*E₀*ν₀*(-0.5*b₁*(a₂ + x*b₂ + y*c₂)/A + 0.5*b₂*(a₁ + x*b₁ + y*c₁)/A)/(A*(1 - ν₀^2)))*(-0.5*c₁*(a₂ + x*b₂ + y*c₂)/A + 0.5*c₂*(a₁ + x*b₁ + y*c₁)/A)/A + (1/2)*(0.25*b₃*(-0.5*c₁*(a₂ + x*b₂ + y*c₂)/A + 0.5*c₂*(a₁ + x*b₁ + y*c₁)/A)/A + 0.25*c₃*(-0.5*b₁*(a₂ + x*b₂ + y*c₂)/A + 0.5*b₂*(a₁ + x*b₁ + y*c₁)/A)/A + 0.25*(a₃ + x*b₃ + y*c₃)*(-0.5*b₁*c₂/A + 0.5*b₂*c₁/A)/A + 0.25*(a₃ + x*b₃ + y*c₃)*(0.5*b₁*c₂/A - 0.5*b₂*c₁/A)/A)^2*E₀*(1 - ν₀)/(1 - ν₀^2)
         return K
     end
-    K=sparse(hcubature(BtDB,[-1,-1],[1,1])[1])
+    K=hcubature(BtDB,[-1,-1],[1,1])[1]
     #9x9 to 18x18
     I=1:9
     J=[1,2,6,7,8,12,13,14,18]

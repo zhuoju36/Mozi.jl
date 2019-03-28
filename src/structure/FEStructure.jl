@@ -18,7 +18,7 @@ include("./FETria.jl")
 # using .FEMaterial,.FESection
 # using .FENode, .FEBeam, .FEQuad, .FETria
 
-export Structure,
+export Structure,AbstractElement,
 add_uniaxial_metal!,add_section!,add_general_section!,add_beam_section!,
 add_node!,set_nodal_restraint!,set_nodal_spring!,set_nodal_mass!,
 add_beam!,set_beam_release!,set_beam_orient!,
@@ -26,7 +26,7 @@ add_quad!,set_quad_rotation!,
 add_tria!,set_tria_rotation!,
 
 set_damp_constant!,set_damp_Rayleigh!,
-integrateK!,integrateM!,integrateP!,
+integrateK,integrateM,integrateP,
 integrateKσ
 
 mutable struct Structure

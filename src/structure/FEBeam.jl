@@ -1,3 +1,5 @@
+export Beam
+
 mutable struct Beam <: AbstractElement
     id::String
     hid::Int
@@ -14,12 +16,6 @@ mutable struct Beam <: AbstractElement
     center::Vector{Float64}
     l::Float64
     T::Matrix{Float64} #transform_matrix
-    K̄ᵉ::Matrix{Float64}#condensed
-    M̄ᵉ::Matrix{Float64}#condensed
-    P̄ᵉ::Vector{Float64}#condensed
-    Kᵉ::Matrix{Float64}
-    Mᵉ::Matrix{Float64}
-    Pᵉ::Vector{Float64}
 end
 
 function Beam(id,hid,node1,node2,material,section;elm_type="eular_shear",mass_type="concentrate")
@@ -37,13 +33,7 @@ function Beam(id,hid,node1,node2,material,section;elm_type="eular_shear",mass_ty
     T[1:3,1:3]=T[4:6,4:6]=T[7:9,7:9]=T[10:12,10:12]=csys.T
     l=norm(node1.loc-node2.loc)
     release=Bool.(zeros(12))
-    K̄=zeros(12,12)
-    M̄=zeros(12,12)
-    P̄=zeros(12)
-    K=zeros(12,12)
-    M=zeros(12,12)
-    P=zeros(12)
-    Beam(string(id),hid,node1,node2,material,section,release,elm_type,mass_type,(pt1+pt2)/2,l,T,K̄,M̄,P̄,K,M,P)
+    Beam(string(id),hid,node1,node2,material,section,release,elm_type,mass_type,(pt1+pt2)/2,l,T)
 end
 
 for (root,dirs,files) in walkdir(joinpath(@__DIR__,"beams"))
@@ -54,18 +44,16 @@ for (root,dirs,files) in walkdir(joinpath(@__DIR__,"beams"))
     end
 end
 
-function integrateK!(beam::Beam)::Matrix{Float64}
+function integrateK(beam::Beam)::Matrix{Float64}
     if beam.elm_type=="eular_shear"
-        K=K_eular_shear(beam::Beam)
+        return K_eular_shear(beam::Beam)
     end
-    beam.Kᵉ=K
 end
 
 function integrateKσ(beam::Beam,σ::Vector{Float64})::Matrix{Float64}
     if beam.elm_type=="eular_shear"
-        K=K2_eular_shear(beam::Beam)
+        return K2_eular_shear(beam::Beam)
     end
-    Kᵉ=K
 end
 
 function static_condensation(K,P,rDOF::Vector{Int})
@@ -88,17 +76,15 @@ function static_condensation(K,P,rDOF::Vector{Int})
     return Kᶜ,Pᶜ
 end
 
-function integrateM!(beam::Beam)::Matrix{Float64}
+function integrateM(beam::Beam)::Matrix{Float64}
     E,ν=beam.material.E,beam.material.ν
     A,I₂,I₃,J,l=beam.section.A,beam.section.I₂,beam.section.I₃,beam.section.J,beam.l
     ρ=beam.material.ρ
-    beam.M̄ᵉ=Matrix(I,12,12)*12*ρ*A*l/2
     if beam.mass_type=="concentrate"
-        beam.Mᵉ=Matrix(I,12,12)*12*ρ*A*l/2
+        return Matrix(I,12,12)*12*ρ*A*l/2
     elseif beam.mass_type=="coordinate"
-        beam.Mᵉ=Matrix(I,12,12)*12*ρ*A*l/2
+        return Matrix(I,12,12)*12*ρ*A*l/2
     end
-    return beam.Mᵉ
 end
 
 function calc_force(beam,beamforce)
@@ -145,10 +131,9 @@ function calc_force(beam,beamforce)
     return Pᵉ_f,Pᵉ_s,Pᵉ_σ₀,Pᵉ_ϵ₀
 end
 
-function integrateP!(beam::Beam,beam_force)::Vector{Float64}
+function integrateP(beam::Beam,beam_force)::Vector{Float64}
     Pfᵉ,Psᵉ,Pσ₀ᵉ,Pϵ₀ᵉ=calc_force(beam,beam_force) #Pᵉ=Pᵉf+Pᵉs+Pᵉσ₀+Pᵉϵ₀
-    beam.Pᵉ=reshape(Pfᵉ+Psᵉ+Pσ₀ᵉ+Pϵ₀ᵉ,12)
-    return beam.Pᵉ
+    return reshape(Pfᵉ+Psᵉ+Pσ₀ᵉ+Pϵ₀ᵉ,12)
 end
 
 # end

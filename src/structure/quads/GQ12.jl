@@ -1,6 +1,6 @@
 #Reference:
 #须寅, 龙驭球. 采用广义协调条件构造具有旋转自由度的四边形膜元[J]. 工程力学, 1993, 10(3): 27―36.
-function K_GQ12(elm::Quad)::SparseMatrixCSC{Float64}
+function K_GQ12(elm::Quad)::Matrix{Float64}
     E₀,ν₀=elm.material.E,elm.material.ν
     center=elm.center
     t=elm.t
@@ -99,7 +99,7 @@ function K_GQ12(elm::Quad)::SparseMatrixCSC{Float64}
 
         return K*det(J)*t
     end
-    K=sparse(hcubature(BtDB,[-1,-1],[1,1])[1])
+    K=hcubature(BtDB,[-1,-1],[1,1])[1]
     #12x12 to 24x24
     I=1:12
     J=[1,2,6,7,8,12,13,14,18,19,20,24]

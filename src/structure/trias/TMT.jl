@@ -1,6 +1,6 @@
 #Reference
 #岑松, 龙志飞, 对转角场和剪应变场进行合理插值的厚板元[J]. 工程力学, 1998,15(3): 1―14.
-function K_TMT(elm::Tria)::SparseMatrixCSC{Float64}
+function K_TMT(elm::Tria)::Matrix{Float64}
     E₀,ν₀=elm.material.E,elm.material.ν
     G₀=elm.material.G
     center=elm.center
@@ -75,7 +75,7 @@ function K_TMT(elm::Tria)::SparseMatrixCSC{Float64}
         Ks=transpose(Bs)*C*Bs
         K=Kb+Ks
     end
-    K=sparse(hcubature(BtDB,[-1,-1],[1,1])[1])
+    K=hcubature(BtDB,[-1,-1],[1,1])[1]
     # #left-hand system to right-hand system
     # I=1:9
     # J=[1,3,2,4,6,5,7,9,8,10,12,11]

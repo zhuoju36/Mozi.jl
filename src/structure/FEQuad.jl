@@ -1,3 +1,5 @@
+export Quad
+
 mutable struct Quad <: AbstractElement
     id::String
     hid::Int
@@ -17,10 +19,7 @@ mutable struct Quad <: AbstractElement
 
     center::Vector{Float64}
     A::Float64
-    T::SparseMatrixCSC{Float64}
-
-    Kᵉ::SparseMatrixCSC{Float64}
-    Mᵉ::SparseMatrixCSC{Float64}
+    T::Matrix{Float64}
 end
 
 function Quad(id,hid,node1,node2,node3,node4,material,t,t2=0,t3=0,t4=0,elm_type="TMGQ",mass_type="concentrate")
@@ -56,7 +55,8 @@ function Quad(id,hid,node1,node2,node3,node4,material,t,t2=0,t3=0,t4=0,elm_type=
     #check distorsion
     for i in 1:4
         v=vertices[i]-o
-        if (v⋅csys.T[:,3]/norm(csys.T[:,3]))/norm(v)>0.1
+        tol=cos(5*π/180)
+        if abs(v⋅csys.T[:,3])/norm(csys.T[:,3])/norm(v)>tol
             @warn  "Quad "*string(id)*" is too distorted, may lead to element illness."
             break
         end
@@ -82,12 +82,8 @@ function Quad(id,hid,node1,node2,node3,node4,material,t,t2=0,t3=0,t4=0,elm_type=
     for i in 1:8
         T[3i-2:3i,3i-2:3i]=csys.T
     end
-    T=sparse(T)
 
-    Kᵉ=spzeros(1,1)
-    Mᵉ=spzeros(1,1)
-
-    Quad(id,hid,node1,node2,node3,node4,material,t,t2,t3,t4,elm_type,mass_type,o,A,T,Kᵉ,Mᵉ)
+    Quad(id,hid,node1,node2,node3,node4,material,t,t2,t3,t4,elm_type,mass_type,o,A,T)
 end
 
 for (root,dirs,files) in walkdir(joinpath(@__DIR__,"quads"))
@@ -98,8 +94,7 @@ for (root,dirs,files) in walkdir(joinpath(@__DIR__,"quads"))
     end
 end
 
-function integrateK!(elm::Quad)::SparseMatrixCSC{Float64}
-    Kᵉ=spzeros(24,24)
+function integrateK(elm::Quad)::SparseMatrixCSC{Float64}
     if elm.elm_type=="GQ12"
         K=K_GQ12(elm)
     elseif elm.elm_type=="TMQ"
@@ -113,7 +108,7 @@ function integrateK!(elm::Quad)::SparseMatrixCSC{Float64}
     else
         throw("Quad element type error!")
     end
-    elm.Kᵉ=K
+    return K
 end
 
 function integrateKσ(elm::Quad,σ)::Vector{Float64}
@@ -201,7 +196,7 @@ end
 #     return K
 # end
 
-function integrateM!(elm::Quad)::SparseMatrixCSC{Float64}
+function integrateM(elm::Quad)::SparseMatrixCSC{Float64}
     ρ=elm.material.ρ
     center=elm.center
     t=elm.t
@@ -222,7 +217,7 @@ function integrateM!(elm::Quad)::SparseMatrixCSC{Float64}
 
         M*det(J)
     end
-    elm.Mᵉ=sparse(hcubature(ρNtN,[-1,1],[1,1])[1])*t
+    return hcubature(ρNtN,[-1,1],[1,1])[1]*t
 end
 
 function integrateP!(elm::Quad,elm_force)

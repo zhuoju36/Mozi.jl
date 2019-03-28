@@ -65,7 +65,6 @@ function solve_linear_static(structure::Structure,loadcase,restrainedDOFs::Vecto
     @info "-------------------------- 求解一阶线性工况 ---------------------------" 工况=loadcase.id
     K̄=introduce_BC(structure.K,restrainedDOFs)
     P̄=introduce_BC(loadcase.P,restrainedDOFs)
-
     if USE_PARDISO
         ps=Pardiso.MKLPardisoSolver()
         Pardiso.set_matrixtype!(ps,1) #实对称矩阵

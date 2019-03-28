@@ -1,3 +1,5 @@
+export Node
+
 mutable struct Node
     id::String
     hid::Int #attribute by system, not by user
@@ -21,7 +23,7 @@ function Node(id,hid::Int,x::Float64,y::Float64,z::Float64)
     Node(string(id),hid,o,T,restraints,spring,mass)
 end
 
-integrateK!(node::Node)=Array(Diagonal((node.T)'*node.spring))
-integrateM!(node::Node)=Array(Diagonal((node.T)'*node.mass))
+integrateK(node::Node)=Array(Diagonal((node.T)'*node.spring))
+integrateM(node::Node)=Array(Diagonal((node.T)'*node.mass))
 
 # end

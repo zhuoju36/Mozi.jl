@@ -65,19 +65,34 @@ function disperse(A::Vector,i::Vector{Int},N::Int)
     to_array(SparseMatrixCOO(N,1,I,J,V))[:,1]
 end
 
-function disperse_idx(node::FEStructure.Node)
+function disperse_idx(node::Node)
     i=node.hid
     collect(6*i-5:6*i)
 end
 
-function disperse_idx(elm::FEStructure.Beam)
+function disperse_idx(elm::Beam)
     i = elm.node1.hid
     j = elm.node2.hid
     [6i-5:6i;6j-5:6j]
 end
 
-assembleK(elm,N)=disperse(elm.T'*integrateK!(elm)*elm.T,disperse_idx(elm),N)
-assembleM(elm,N)=disperse(elm.T'*integrateM!(elm)*elm.T,disperse_idx(elm),N)
+function disperse_idx(elm::Quad)
+    i = elm.node1.hid
+    j = elm.node2.hid
+    k = elm.node3.hid
+    l = elm.node4.hid
+    [6i-5:6i;6j-5:6j;6k-5:6k;6l-5:6l]
+end
+
+function disperse_idx(elm::Tria)
+    i = elm.node1.hid
+    j = elm.node2.hid
+    k = elm.node3.hid
+    [6i-5:6i;6j-5:6j;6k-5:6k]
+end
+
+assembleK(elm,N)=disperse(elm.T'*integrateK(elm)*elm.T,disperse_idx(elm),N)
+assembleM(elm,N)=disperse(elm.T'*integrateM(elm)*elm.T,disperse_idx(elm),N)
 
 """
     assemble!(structure,lcset;path=pwd())
@@ -208,7 +223,7 @@ end
     #calculate gravity
     _gset=LoadCaseSet()
     add_static_case!(_gset,"__Gravity__",1.0)
-    Pg=spzeros(nDOF,1)
+    Pg=zeros(nDOF)
     for elm in values(structure.beams)
         #load on repeat id will be added together
         f=[0,0,-9.81*elm.material.ρ*elm.section.A,0,0,0,
@@ -221,35 +236,37 @@ end
     #add quad / tria gravity
     for load in values(_gset.statics["__Gravity__"].beam_forces)
         elm=structure.beams[load.id]
-        Pᵉ=integrateP!(elm,load)
+        Kᵉ=integrateK(elm)
+        Pᵉ=integrateP(elm,load)
         rDOF=findall(x->x==true,elm.release)
-        K̄ᵉ,P̄ᵉ=FEStructure.static_condensation(Array(elm.Kᵉ),elm.Pᵉ,rDOF)
+        K̃ᵉ,P̃ᵉ=FEStructure.static_condensation(Kᵉ,Pᵉ,rDOF)
         idx=disperse_idx(elm)
-        Pg+=disperse(elm.T'*P̄ᵉ,idx,nDOF)
+        Pg+=disperse(reshape(elm.T'*P̃ᵉ,12),idx,nDOF)
     end
 
     cases=merge(lcset.statics,lcset.bucklings,lcset.time_histories)
     for l in keys(cases)
         loadcase=cases[l]
-        P=spzeros(nDOF,1)
+        P=zeros(nDOF)
         if l in keys(lcset.statics)
             P.+=Pg*loadcase.gfactor
         end
         for load in values(loadcase.beam_forces)
             elm=structure.beams[load.id]
-            Pᵉ=integrateP!(elm,load)
+            Kᵉ=integrateK(elm)
+            Pᵉ=integrateP(elm,load)
             rDOF=findall(x->x==true,elm.release)
-            K̄ᵉ,P̄ᵉ=FEStructure.static_condensation(Array(elm.Kᵉ),elm.Pᵉ,rDOF)
+            K̃ᵉ,P̃ᵉ=FEStructure.static_condensation(Kᵉ,Pᵉ,rDOF)
             idx=disperse_idx(elm)
-            P+=disperse(elm.T'*P̄ᵉ,idx,nDOF)
+            P+=disperse(reshape(elm.T'*P̃ᵉ,12),idx,nDOF)
         end
         for load in values(loadcase.nodal_forces)
             node=structure.nodes[load.id]
-            Pⁿ=reshape(load.val,6,1)
+            Pⁿ=reshape(node.T'*load.val,6)
             idx=disperse_idx(node)
-            P+=disperse(elm.T*Pⁿ,idx,nDOF)
+            P+=disperse(Pⁿ,idx,nDOF)
         end
-        cases[l].P=Array(P)[:,1]
+        cases[l].P=P
     end
 
     if mass_source=="weight"
@@ -264,7 +281,7 @@ end
         throw("mass_source should be only weight or loadcases")
     end
     return Assembly(structure,lcset,node_count,beam_count,quad_count,tria_count,
-    nDOF,nDOF-length(restrainedDOFs),restrainedDOFs,lc_tree,path)
+                    nDOF,nDOF-length(restrainedDOFs),restrainedDOFs,lc_tree,path)
 end
 
 function clear_result!(assembly)
@@ -280,7 +297,6 @@ function clear_result!(assembly)
         assembly.lcset.statics[i].P̄=zeros(nDOF)
     end
     assembly.restrainedDOFs=[]
-
     result_dir=joinpath(assembly.working_path,".analysis")
     rm(result_dir,recursive=true)
     return

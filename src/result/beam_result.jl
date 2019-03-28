@@ -1,4 +1,3 @@
-# using ..FEStructure.FEBeam
 export result_beam_force,result_beam_displacement
 
 """
@@ -31,12 +30,9 @@ function result_beam_force(assembly,lc_id,beam_id)
     uᵉ=T*[d[iDOFs];u[jDOFs]]
 
     rDOF=findall(x->x==true,elm.release)
-    if length(rDOF)!=0
-        K̄ᵉ,P̄ᵉ=static_condensation(Array(elm.Kᵉ),zeros(12),rDOF)
-        return K̄ᵉ*uᵉ
-    else
-        return Kᵉ*uᵉ
-    end
+    Kᵉ=integrateK(elm)
+    K̃ᵉ,P̃ᵉ=static_condensation(K̃ᵉ,zeros(12),rDOF)
+    return K̃ᵉ*uᵉ
 end
 
 """
@@ -74,7 +70,7 @@ function result_beam_displacement(assembly,lc_id,beam_id)
     end
     T=elm.T
     uᵉ=T*[u[iDOFs];u[jDOFs]]
-    K̄ᵉ=Array(elm.Kᵉ)
+    K̄ᵉ=integrateK(elm)
     i=.!elm.release
     j=elm.release
     Kᵢᵢ=K̄ᵉ[i,i]
@@ -119,7 +115,7 @@ function result_beam_displacement(assembly,lc_id)
         end
         T=elm.T
         uᵉ=T*[u[iDOFs];u[jDOFs]]
-        K̄ᵉ=Array(elm.Kᵉ)
+        K̄ᵉ=integrateK(elm)
         i=.!elm.release
         j=elm.release
         Kᵢᵢ=K̄ᵉ[i,i]
