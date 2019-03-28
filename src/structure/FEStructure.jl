@@ -4,6 +4,7 @@ using LinearAlgebra
 
 using HCubature
 
+using ..FESparse
 using ..Enums
 using ..CoordinateSystem
 include("./FEMaterial.jl")

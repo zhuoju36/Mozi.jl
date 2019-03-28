@@ -20,9 +20,11 @@ macro showbanner(word,total=99)
     println()
 end
 
+# include("./sparse/sparse_test.jl")
+
 include("./beams/element_test.jl")
 # include("./quads/element_test.jl")
-# include("./trias/element_test.jl")
+# include("./trias/element_test.jl")]
 
 
 # include("./static_cantilever.jl")

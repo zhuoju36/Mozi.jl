@@ -1,4 +1,4 @@
-function K_eular_shear(beam::Beam)::SparseMatrixCSC{Float64}
+function K_eular_shear(beam::Beam)::Matrix{Float64}
     E,ν=beam.material.E,beam.material.ν
     A,I₂,I₃,J,l=beam.section.A,beam.section.I₂,beam.section.I₃,beam.section.J,beam.l
     As₂,As₃=beam.section.As₂,beam.section.As₃
@@ -37,10 +37,10 @@ function K_eular_shear(beam::Beam)::SparseMatrixCSC{Float64}
 
     K[2,12]=K[12,2]=6E*I₃/l^2/(1+ϕ₂)
 
-    sparse(K)
+    return K
 end
 
-function K2_eular_shear(beam::Beam)::SparseMatrixCSC{Float64}
+function K2_eular_shear(beam::Beam)::Matrix{Float64}
     E,ν=beam.material.E,beam.material.ν
     A,I₂,I₃,J,l=beam.section.A,beam.section.I₂,beam.section.I₃,beam.section.J,beam.l
     As₂,As₃=beam.section.As₂,beam.section.As₃
@@ -78,5 +78,5 @@ function K2_eular_shear(beam::Beam)::SparseMatrixCSC{Float64}
     K[2,12]=K[12,2]=(l/10)/(1+ϕ₂)^2
 
     K*=T/l
-    sparse(K)
+    return K
 end

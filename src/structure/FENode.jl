@@ -21,7 +21,7 @@ function Node(id,hid::Int,x::Float64,y::Float64,z::Float64)
     Node(string(id),hid,o,T,restraints,spring,mass)
 end
 
-integrateK!(node::Node)=sparse(Diagonal((node.T)'*node.spring))
-integrateM!(node::Node)=sparse(Diagonal((node.T)'*node.mass))
+integrateK!(node::Node)=Array(Diagonal((node.T)'*node.spring))
+integrateM!(node::Node)=Array(Diagonal((node.T)'*node.mass))
 
 # end

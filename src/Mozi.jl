@@ -1,5 +1,6 @@
 module Mozi
 
+include("./FESparse.jl")
 include("./assembly/Enums.jl")
 include("./assembly/CoordinateSystem.jl")
 include("./structure/FEStructure.jl")

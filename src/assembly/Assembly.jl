@@ -6,6 +6,7 @@ using LinearAlgebra
 import Base.Filesystem
 
 using ..FEStructure
+using ..FESparse
 using ..LoadCase
 
 export assemble!,assemble_cable_link!,
@@ -48,42 +49,35 @@ function DFSfind(lcnode::LCNode,lc::String)
     end
 end
 
-function TG(node::FEStructure.Node,nDOF)
+function disperse(A::Matrix,i::Vector{Int},N::Int)
+    m,n=size(A)
+    I = repeat(i,outer=n)
+    J = repeat(i,inner=m)
+    V = reshape(A,m*n)
+    SparseMatrixCOO(N,N,I,J,V)
+end
+
+function disperse(A::Vector,i::Vector{Int},N::Int)
+    m=length(A)
+    I = i
+    J = [1 for i in 1:m]
+    V = A
+    to_array(SparseMatrixCOO(N,1,I,J,V))[:,1]
+end
+
+function disperse_idx(node::FEStructure.Node)
     i=node.hid
-    I=collect(1:6)
-    J=collect(6i-5:6i)
-    G=sparse(I,J,1.0,6,nDOF)
-    sparse(node.T)*sparse(I,J,1.0,6,nDOF)
+    collect(6*i-5:6*i)
 end
 
-function TG(elm::FEStructure.Beam,nDOF)
+function disperse_idx(elm::FEStructure.Beam)
     i = elm.node1.hid
     j = elm.node2.hid
-    I=collect(1:12)
-    J=[6i-5:6i;6j-5:6j]
-    sparse(elm.T)*sparse(I,J,1.0,12,nDOF)
+    [6i-5:6i;6j-5:6j]
 end
 
-function TG(elm::FEStructure.Quad,nDOF)
-    i = elm.node1.hid
-    j = elm.node2.hid
-    k = elm.node3.hid
-    l = elm.node4.hid
-    I=collect(1:24)
-    J=[6i-5:6i;6j-5:6j;6k-5:6k;6l-5:6l]
-    sparse(elm.T)*sparse(I,J,1.0,24,nDOF)
-end
-
-function TG(elm::FEStructure.Tria,nDOF)
-    i = elm.node1.hid
-    j = elm.node2.hid
-    k = elm.node3.hid
-    I=collect(1:18)
-    J=[6i-5:6i;6j-5:6j;6k-5:6k]
-    sparse(elm.T)*sparse(I,J,1.0,18,nDOF)
-end
-
-AtBA(A::SparseMatrixCSC,B::SparseMatrixCSC)=A'*B*A
+assembleK(elm,N)=disperse(elm.T'*integrateK!(elm)*elm.T,disperse_idx(elm),N)
+assembleM(elm,N)=disperse(elm.T'*integrateM!(elm)*elm.T,disperse_idx(elm),N)
 
 """
     assemble!(structure,lcset;path=pwd())
@@ -107,9 +101,9 @@ function assemble!(structure,lcset;mass_source="weight",mass_cases=[],mass_cases
     quad_count=length(structure.quads)
     tria_count=length(structure.trias)
 
-    K=spzeros(nDOF,nDOF)
+    K=spzeros_coo(nDOF,nDOF)
     K̄=spzeros(nDOF,nDOF)
-    M=spzeros(nDOF,nDOF)
+    M=spzeros_coo(nDOF,nDOF)
     M̄=spzeros(nDOF,nDOF)
     C=sparse(0.02*I,nDOF,nDOF)
     C̄=sparse(0.02*I,nDOF,nDOF)
@@ -171,43 +165,32 @@ function assemble!(structure,lcset;mass_source="weight",mass_cases=[],mass_cases
     #     end
     #     M+=A'*Mᵉ*A
     # end
+
 @time begin
     if node_count>0
-        tg=TG.(values(structure.nodes),nDOF)
-        k=integrateK!.(values(structure.nodes))
-        m=integrateM!.(values(structure.nodes))
-        K+=reduce(+,AtBA.(tg,k))
-        M+=reduce(+,AtBA.(tg,m))
+        K+=reduce(+,assembleK.(values(structure.nodes),nDOF))
+        M+=reduce(+,assembleM.(values(structure.nodes),nDOF))
     end
 end
 
 @time begin
     if beam_count>0
-        tg=TG.(values(structure.beams),nDOF)
-        k=integrateK!.(values(structure.beams))
-        m=integrateM!.(values(structure.beams))
-        K+=reduce(+,AtBA.(tg,k))
-        M+=reduce(+,AtBA.(tg,m))
+        K+=reduce(+,assembleK.(values(structure.beams),nDOF))
+        M+=reduce(+,assembleM.(values(structure.beams),nDOF))
     end
 end
 
 @time begin
     if quad_count>0
-        tg=TG.(values(structure.quads),nDOF)
-        k=integrateK!.(values(structure.quads))
-        m=integrateM!.(values(structure.quads))
-        K+=reduce(+,AtBA.(tg,k))
-        M+=reduce(+,AtBA.(tg,m))
+        K+=reduce(+,assembleK.(values(structure.quads),nDOF))
+        M+=reduce(+,assembleM.(values(structure.quads),nDOF))
     end
 end
 
 @time begin
     if tria_count>0
-        tg=TG.(values(structure.trias),nDOF)
-        k=integrateK!.(values(structure.trias))
-        m=integrateM!.(values(structure.trias))
-        K+=reduce(+,AtBA.(tg,k))
-        M+=reduce(+,AtBA.(tg,m))
+        K+=reduce(+,assembleK.(values(structure.trias),nDOF))
+        M+=reduce(+,assembleM.(values(structure.trias),nDOF))
     end
 end
 
@@ -219,7 +202,7 @@ end
         throw("Structural damping error!")
     end
 
-    structure.K=K
+    structure.K=to_csc(K)
     structure.C=C
 
     #calculate gravity
@@ -241,7 +224,8 @@ end
         Pᵉ=integrateP!(elm,load)
         rDOF=findall(x->x==true,elm.release)
         K̄ᵉ,P̄ᵉ=FEStructure.static_condensation(Array(elm.Kᵉ),elm.Pᵉ,rDOF)
-        Pg+=TG(elm,nDOF)'*P̄ᵉ
+        idx=disperse_idx(elm)
+        Pg+=disperse(elm.T'*P̄ᵉ,idx,nDOF)
     end
 
     cases=merge(lcset.statics,lcset.bucklings,lcset.time_histories)
@@ -256,24 +240,26 @@ end
             Pᵉ=integrateP!(elm,load)
             rDOF=findall(x->x==true,elm.release)
             K̄ᵉ,P̄ᵉ=FEStructure.static_condensation(Array(elm.Kᵉ),elm.Pᵉ,rDOF)
-            P.+=TG(elm,nDOF)'*P̄ᵉ
+            idx=disperse_idx(elm)
+            P+=disperse(elm.T'*P̄ᵉ,idx,nDOF)
         end
         for load in values(loadcase.nodal_forces)
             node=structure.nodes[load.id]
             Pⁿ=reshape(load.val,6,1)
-            P.+=TG(node,nDOF)'*Pⁿ
+            idx=disperse_idx(node)
+            P+=disperse(elm.T*Pⁿ,idx,nDOF)
         end
         cases[l].P=Array(P)[:,1]
     end
 
     if mass_source=="weight"
-        structure.M=M
+        structure.M=to_csc(M)
     elseif mass_source=="loadcases"
         M=zero(M)
         for (lc,fac) in (mass_cases, mass_case_factors)
             M+=Diagonal(lcset.statics[lc].P)*fac
         end
-        structure.M=M
+        structure.M=sparse(M)
     else
         throw("mass_source should be only weight or loadcases")
     end
