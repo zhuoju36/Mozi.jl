@@ -34,9 +34,10 @@ mutable struct StaticCase <: AbstractLoadCase
     nodal_disps::Dict{String,NodalDisp}
     beam_forces::Dict{String,BeamForce}
     quad_forces::Dict{String,QuadForce}
+    tria_forces::Dict{String,TriaForce}
 
-    P::Vector
-    P̄::Vector
+    P::Vector{Float64}
+    P̄::Vector{Float64}
 
     StaticCase(id,hid,nl_type="1st",plc="",gfactor=0.)=new(
         string(id),
@@ -48,6 +49,7 @@ mutable struct StaticCase <: AbstractLoadCase
         Dict{String,NodalDisp}(),
         Dict{String,BeamForce}(),
         Dict{String,QuadForce}(),
+        Dict{String,TriaForce}(),
         zeros(1),
         zeros(1))
 end

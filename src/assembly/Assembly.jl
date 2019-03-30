@@ -49,6 +49,33 @@ function DFSfind(lcnode::LCNode,lc::String)
     end
 end
 
+function idxmap(node::Node)
+    i=node.hid
+    collect(6*i-5:6*i)
+end
+
+function idxmap(elm::Beam)
+    i = elm.node1.hid
+    j = elm.node2.hid
+    [6i-5:6i;6j-5:6j]
+end
+
+function idxmap(elm::Quad)
+    i = elm.node1.hid
+    j = elm.node2.hid
+    k = elm.node3.hid
+    l = elm.node4.hid
+    [6i-5:6i;6j-5:6j;6k-5:6k;6l-5:6l]
+end
+
+function idxmap(elm::Tria)
+    i = elm.node1.hid
+    j = elm.node2.hid
+    k = elm.node3.hid
+    [6i-5:6i;6j-5:6j;6k-5:6k]
+end
+
+
 function disperse(A::Matrix,i::Vector{Int},N::Int)
     m,n=size(A)
     I = repeat(i,outer=n)
@@ -57,38 +84,12 @@ function disperse(A::Matrix,i::Vector{Int},N::Int)
     SparseMatrixCOO(N,N,I,J,V)
 end
 
-function disperse(A::Vector,i::Vector{Int64},N::Int64)
-    m=length(A)
-    I = i
-    J = [1 for i in 1:m]
-    V = A
-    to_array(SparseMatrixCOO(N,1,I,J,V))[:,1]
-end
-
-function disperse_idx(node::Node)
-    i=node.hid
-    collect(6*i-5:6*i)
-end
-
-function disperse_idx(elm::Beam)
-    i = elm.node1.hid
-    j = elm.node2.hid
-    [6i-5:6i;6j-5:6j]
-end
-
-function disperse_idx(elm::Quad)
-    i = elm.node1.hid
-    j = elm.node2.hid
-    k = elm.node3.hid
-    l = elm.node4.hid
-    [6i-5:6i;6j-5:6j;6k-5:6k;6l-5:6l]
-end
-
-function disperse_idx(elm::Tria)
-    i = elm.node1.hid
-    j = elm.node2.hid
-    k = elm.node3.hid
-    [6i-5:6i;6j-5:6j;6k-5:6k]
+function disperse(A::Vector,i::Vector{Int},N::Int)
+    # m=length(A)
+    # I = i
+    # J = [1 for i in 1:m]
+    # V = A
+    SparseVector(N,i,A)
 end
 
 function appendcoo!(a::SparseMatrixCOO,b::SparseMatrixCOO)
@@ -98,8 +99,53 @@ function appendcoo!(a::SparseMatrixCOO,b::SparseMatrixCOO)
     return a
 end
 
-assembleK(elm,N)=disperse(elm.T'*integrateK(elm)*elm.T,disperse_idx(elm),N)
-assembleM(elm,N)=disperse(elm.T'*integrateM(elm)*elm.T,disperse_idx(elm),N)
+function appendcoo!(a::SparseVector,b::SparseVector)
+    append!(a.nzind,b.nzind)
+    append!(a.nzval,b.nzval)
+    return a
+end
+
+assembleK(elm,N)=disperse(elm.T'*integrateK(elm)*elm.T,idxmap(elm),N)
+assembleM(elm,N)=disperse(elm.T'*integrateM(elm)*elm.T,idxmap(elm),N)
+assembleP(elm,N,f)=disperse(elm.T'*integrateP(elm,f),idxmap(elm),N)
+
+function getvalues(dict::Dict,keys::Vector)
+    v=[]
+    for k in keys
+        push!(v,dict[k])
+    end
+    return v
+end
+
+function calc_Pg(structure::Structure,gaccel::Float64,nDOF::Int)
+    #calculate gravity
+    _gset=LoadCaseSet()
+    add_static_case!(_gset,"__Gravity__",1.0)
+    Pg=spzeros(nDOF)
+    for elm in values(structure.beams)
+        #load on repeat id will be added together
+        f=[0,0,-gaccel*elm.material.ρ*elm.section.A,0,0,0,
+           0,0,-gaccel*elm.material.ρ*elm.section.A,0,0,0]
+        T=sparse(elm.T)
+        fᵉ=T*f
+        fi1,fi2,fi3,mi1,mi2,mi3,fi1,fi2,fi3,mi1,mi2,mi3=fᵉ
+        add_beam_distributed!(_gset,"__Gravity__",elm.id,fi1,fi2,fi3,mi1,mi2,mi3,fi1,fi2,fi3,mi1,mi2,mi3)
+    end
+    #add quad / tria gravity
+    gforce=collect(values(_gset.statics["__Gravity__"].beam_forces))
+    if !isempty(gforce)
+        Pg=reduce(appendcoo!,assembleP.(getvalues(structure.beams,getproperty.(gforce,:id)),nDOF,gforce),init=Pg)
+    end
+    gforce=collect(values(_gset.statics["__Gravity__"].quad_forces))
+    if !isempty(gforce)
+        Pg=reduce(appendcoo!,assembleP.(getvalues(structure.quads,getproperty.(gforce,:id)),nDOF,gforce),init=Pg)
+    end
+    gforce=collect(values(_gset.statics["__Gravity__"].tria_forces))
+    if !isempty(gforce)
+        Pg=reduce(appendcoo!,assembleP.(getvalues(structure.trias,getproperty.(gforce,:id)),nDOF,gforce),init=Pg)
+    end
+    return to_array(Pg)
+end
 
 """
     assemble!(structure,lcset;path=pwd())
@@ -224,52 +270,48 @@ end
     structure.K=to_csc(K)
     structure.C=C
 
-    #calculate gravity
-    _gset=LoadCaseSet()
-    add_static_case!(_gset,"__Gravity__",1.0)
-    Pg=zeros(nDOF)
-    for elm in values(structure.beams)
-        #load on repeat id will be added together
-        f=[0,0,-9.81*elm.material.ρ*elm.section.A,0,0,0,
-           0,0,-9.81*elm.material.ρ*elm.section.A,0,0,0]
-        T=sparse(elm.T)
-        fᵉ=T*f
-        fi1,fi2,fi3,mi1,mi2,mi3,fi1,fi2,fi3,mi1,mi2,mi3=fᵉ
-        add_beam_distributed!(_gset,"__Gravity__",elm.id,fi1,fi2,fi3,mi1,mi2,mi3,fi1,fi2,fi3,mi1,mi2,mi3)
-    end
-    #add quad / tria gravity
-    for load in values(_gset.statics["__Gravity__"].beam_forces)
-        elm=structure.beams[load.id]
-        Kᵉ=integrateK(elm)
-        Pᵉ=integrateP(elm,load)
-        rDOF=findall(x->x==true,elm.release)
-        K̃ᵉ,P̃ᵉ=FEStructure.static_condensation(Kᵉ,Pᵉ,rDOF)
-        idx=disperse_idx(elm)
-        Pg+=disperse(reshape(elm.T'*P̃ᵉ,12),idx,nDOF)
-    end
+    Pg=calc_Pg(structure,9.81,nDOF)
+    # for load in values(_gset.statics["__Gravity__"].beam_forces)
+    #     elm=structure.beams[load.id]
+    #     Kᵉ=integrateK(elm)
+    #     Pᵉ=integrateP(elm,load)
+    #     rDOF=findall(x->x==true,elm.release)
+    #     K̃ᵉ,P̃ᵉ=FEStructure.static_condensation(Kᵉ,Pᵉ,rDOF)
+    #     idx=idxmap(elm)
+    #     Pg+=disperse(reshape(elm.T'*P̃ᵉ,12),idx,nDOF)
+    # end
 
     cases=merge(lcset.statics,lcset.bucklings,lcset.time_histories)
     for l in keys(cases)
         loadcase=cases[l]
         P=zeros(nDOF)
-        if l in keys(lcset.statics)
+        if haskey(lcset.statics,l)
             P.+=Pg*loadcase.gfactor
         end
-        for load in values(loadcase.beam_forces)
-            elm=structure.beams[load.id]
-            Kᵉ=integrateK(elm)
-            Pᵉ=integrateP(elm,load)
-            rDOF=findall(x->x==true,elm.release)
-            K̃ᵉ,P̃ᵉ=FEStructure.static_condensation(Kᵉ,Pᵉ,rDOF)
-            idx=disperse_idx(elm)
-            P+=disperse(reshape(elm.T'*P̃ᵉ,12),idx,nDOF)
-        end
-        for load in values(loadcase.nodal_forces)
-            node=structure.nodes[load.id]
-            Pⁿ=reshape(node.T'*load.val,6)
-            idx=disperse_idx(node)
-            P+=disperse(Pⁿ,idx,nDOF)
-        end
+
+
+        # @show collect(values(loadcase.beam_forces))
+        # P+=reduce(+,assembleP.(getvalues(structure.beams,getproperty.(values(loadcase.beam_forces),:id)),nDOF,values(loadcase.beam_forces)))
+        # P+=reduce(+,assembleP.(getvalues(structure.nodes,getproperty.(values(loadcase.nodal_forces),:id)),nDOF,values(loadcase.nodal_forces)))
+
+        # P+=reduce(+,assembleP.(get.(structure.beams,getproperty.(values(loadcase.beam_forces),:id)),nDOF,values(loadcase.beam_forces)))
+        # P+=reduce(+,assembleP.(get.(structure.nodes,getproperty.(values(loadcase.nodal_forces),:id)),nDOF,values(loadcase.nodal_forces)))
+
+        # for load in values(loadcase.beam_forces)
+        #     elm=structure.beams[load.id]
+        #     Kᵉ=integrateK(elm)
+        #     Pᵉ=integrateP(elm,load)
+        #     rDOF=findall(x->x==true,elm.release)
+        #     K̃ᵉ,P̃ᵉ=FEStructure.static_condensation(Kᵉ,Pᵉ,rDOF)
+        #     idx=idxmap(elm)
+        #     P+=disperse(reshape(elm.T'*P̃ᵉ,12),idx,nDOF)
+        # end
+        # for load in values(loadcase.nodal_forces)
+        #     node=structure.nodes[load.id]
+        #     Pⁿ=reshape(node.T'*load.val,6)
+        #     idx=idxmap(node)
+        #     P+=disperse(Pⁿ,idx,nDOF)
+        # end
         cases[l].P=P
     end
 

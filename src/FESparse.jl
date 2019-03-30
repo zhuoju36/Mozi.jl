@@ -21,7 +21,7 @@ end
 
 import Base.size
 
-size(spmatrix::SparseMatrixCOO)=(spmatrix.m,spmatrix.n)
+size(spmat::SparseMatrixCOO)=(spmat.m,spmatx.n)
 
 function spzeros_dok(m::Int,n::Int)
     SparseMatrixDOK{Float64,Int}(m,n,Dict{Tuple{Int,Int},Float64}())
@@ -82,6 +82,14 @@ end
 
 function to_array(spmatrix::SparseMatrixCOO)
     Array(to_csc(spmatrix))
+end
+
+function to_array(spvec::SparseVector)
+    res=zeros(spvec.n)
+    for (i,j) in zip(spvec.nzind,spvec.nzval)
+        res[i]+=j
+    end
+    return res
 end
 
 end

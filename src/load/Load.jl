@@ -5,7 +5,7 @@ using SparseArrays
 using HCubature
 
 export NodalForce,NodalDisp,
-BeamForce,QuadForce
+BeamForce,QuadForce,TriaForce
 
 abstract type AbstractElementForce end
 
@@ -39,6 +39,15 @@ mutable struct QuadForce  <: AbstractElementForce
     σ₀::Vector{Float64}
     ϵ₀::Vector{Float64}
     QuadForce(id)=new(id,zeros(24),zeros(24),zeros(4),zeros(4))
+end
+
+mutable struct TriaForce  <: AbstractElementForce
+    id::String
+    f::Vector{Float64}
+    s::Vector{Float64}
+    σ₀::Vector{Float64}
+    ϵ₀::Vector{Float64}
+    TriaForce(id)=new(id,zeros(24),zeros(24),zeros(4),zeros(4))
 end
 
 end

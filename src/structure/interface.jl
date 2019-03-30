@@ -14,7 +14,7 @@
 """
 function add_uniaxial_metal!(structure::Structure,id,E=2e11,ν=0.3,ρ=7850,α=1e-7,E₂=1e11,f=0.345,fᵤ=0.420)::Int
     id=string(id)
-    if id in keys(structure.materials)
+    if haskey(structure.materials,id)
         throw("material with id "*id*" already exists!")
     end
     hid=length(structure.materials)+1
@@ -34,7 +34,7 @@ end
 """
 function add_beam_section!(structure::Structure,id,sec_type,size1=0,size2=0,size3=0,size4=0,size5=0,size6=0,size7=0,size8=0)::Int
     id=string(id)
-    if id in keys(structure.sections)
+    if haskey(structure.sections,id)
         throw("section with id "*id*" already exists!")
     end
     hid=length(structure.sections)+1
@@ -92,7 +92,7 @@ end
 """
 function add_general_section!(structure::Structure,id,A,I₂,I₃,J,As₂,As₃,W₂,W₃)::Int
     id=string(id)
-    if id in keys(structure.sections)
+    if haskey(structure.sections,id)
         throw("section with id "*id*" already exists!")
     end
     hid=length(structure.sections)+1
@@ -110,7 +110,7 @@ end
 """
 function add_node!(structure::Structure,id,x,y,z)::Int
     id=string(id)
-    if id in keys(structure.nodes)
+    if haskey(structure.nodes,id)
         throw("node id "*string(id)*" already existed")
     end
     hid=length(structure.nodes)+1
@@ -129,7 +129,7 @@ end
 """
 function set_nodal_restraint!(structure::Structure,id,u1::Bool,u2::Bool,u3::Bool,r1::Bool,r2::Bool,r3::Bool)::Int
     id=string(id)
-    if !(id in keys(structure.nodes))
+    if !(haskey(structure.nodes,id))
         throw("node id "*string(id)*" does't existed")
     end
     structure.nodes[id].restraints=[u1,u2,u3,r1,r2,r3]
@@ -146,7 +146,7 @@ end
 """
 function set_nodal_spring!(structure::Structure,id,u1,u2,u3,r1,r2,r3)::Int
     id=string(id)
-    if !(id in keys(structure.nodes))
+    if !(haskey(structure.nodes,id))
         throw("node id "*string(id)*" does't existed")
     end
     structure.nodes[id].spring=Float64.([u1,u2,u3,r1,r2,r3])
@@ -163,7 +163,7 @@ end
 """
 function set_nodal_mass!(structure::Structure,id,u1,u2,u3,r1,r2,r3)::Int
     id=string(id)
-    if !(id in keys(structure.nodes))
+    if !(haskey(structure.nodes,id))
         throw("node id "*string(id)*" does't existed")
     end
     structure.nodes[id].mass=Float64.([u1,u2,u3,r1,r2,r3])
@@ -199,20 +199,20 @@ end
 function add_beam!(structure::Structure,id,i,j,mat_id,sec_id)::Int
     id=string(id)
     hid=length(structure.beams)+1
-    if id in keys(structure.beams)
+    if haskey(structure.beams,id)
         throw("beam id "*string(id)*" already exists!")
     end
     i,j=string(i),string(j)
-    if !(i in keys(structure.nodes))
+    if !(haskey(structure.nodes,i))
         throw("node with id "*string(i)*" doesn't exist!")
     end
-    if !(j in keys(structure.nodes))
+    if !(haskey(structure.nodes,j))
         throw("node with id "*string(j)*" doesn't exist!")
     end
-    if !(mat_id in keys(structure.materials))
+    if !( haskey(structure.materials,mat_id))
         throw("material with id "*string(mat_id)*" doesn't exist!")
     end
-    if !(sec_id in keys(structure.sections))
+    if !( haskey(structure.sections,sec_id))
         throw("section with id "*string(sec_id)*" doesn't exist!")
     end
     node1=structure.nodes[i]
@@ -234,7 +234,7 @@ end
 """
 function set_beam_orient!(structure::Structure,id,degree)::Int
     id=string(id)
-    if !(id in keys(structure.beams))
+    if !haskey(structure.beams,id)
         throw("beam id "*string(id)*" doesn't exists!")
     end
     rad=π/180*degree
@@ -258,7 +258,7 @@ end
 """
 function set_beam_release!(structure::Structure,id,fᵢ₁::Bool,fᵢ₂::Bool,fᵢ₃::Bool,m₁₁::Bool,mᵢ₂::Bool,mᵢ₃::Bool,fⱼ₁::Bool,fⱼ₂::Bool,fⱼ₃::Bool,mⱼ₁::Bool,mⱼ₂::Bool,mⱼ₃::Bool)::Int
     id=string(id)
-    if !(id in keys(structure.beams))
+    if !haskey(structure.beams,id)
         throw("beam id "*string(id)*" doesn't exists!")
     end
     structure.beams[id].release=[fᵢ₁,fᵢ₂,fᵢ₃,m₁₁,mᵢ₂,mᵢ₃,fⱼ₁,fⱼ₂,fⱼ₃,mⱼ₁,mⱼ₂,mⱼ₃]
@@ -278,16 +278,17 @@ end
 function add_quad!(structure::Structure,id,i,j,k,l,mat_id,t;t2=0,t3=0,t4=0,elm_type="DKGQ",mass_type="concentrate")::Int
     id=string(id)
     hid=length(structure.quads)+1
-    if id in keys(structure.quads)
+    mat_id=string(mat_id)
+    if haskey(structure.quads,id)
         throw("quad id "*string(id)*" already exists!")
     end
     i,j,k,l=string(i),string(j),string(k),string(l)
     for n_i in (i,j,k,l)
-        if !(n_i in keys(structure.nodes))
+        if !haskey(structure.nodes,n_i)
             throw("node with id "*n_i*" doesn't exist!")
         end
     end
-    if !(string(mat_id) in keys(structure.materials))
+    if !haskey(structure.materials,mat_id)
         throw("material with id "*string(mat_id)*" doesn't exist!")
     end
     node1=structure.nodes[i]
@@ -310,7 +311,7 @@ end
 """
 function set_quad_rotation!(structure::Structure,id,degree)::Int
     id=string(id)
-    if !(id in keys(structure.quads))
+    if !haskey(structure.quads,id)
         throw("quad id "*string(id)*" doesn't exists!")
     end
     rad=π/180*degree
@@ -337,16 +338,16 @@ end
 function add_tria!(structure::Structure,id,i,j,k,mat_id,t;t2=0,t3=0,t4=0,elm_type="DKGQ",mass_type="concentrate")::Int
     id=string(id)
     hid=length(structure.trias)+1
-    if id in keys(structure.trias)
+    if haskey(structure.trias,id)
         throw("tria id "*string(id)*" already exists!")
     end
     i,j,k=string(i),string(j),string(k)
     for n_i in (i,j,k)
-        if !(n_i in keys(structure.nodes))
+        if !haskey(structure.nodes,n_i)
             throw("node with id "*n_i*" doesn't exist!")
         end
     end
-    if !(mat_id in keys(structure.materials))
+    if !haskey(structure.materials,mat_id)
         throw("material with id "*string(j)*" doesn't exist!")
     end
     node1=structure.nodes[i]
@@ -368,8 +369,8 @@ end
 """
 function set_tria_rotation!(structure::Structure,id,degree)::Int
     id=string(id)
-    if !(id in keys(structure.trias))
-        throw("tria id "*string(id)*" doesn't exists!")
+    if !haskey(structure.trias,id)
+        throw("tria id "*id*" doesn't exists!")
     end
     rad=π/180*degree
     Rₓ=[cos(rad) -sin(rad) 0;
