@@ -70,6 +70,11 @@ dHˣdη=diff.(Hˣ,η)
 dHʸdξ=diff.(Hʸ,ξ)
 dHʸdη=diff.(Hʸ,η)
 
+@show dHˣdξ
+@show dHˣdη
+@show dHʸdξ
+@show dHʸdη
+
 x₁₂,x₃₁=xᵢⱼ[1],xᵢⱼ[3]
 y₁₂,y₃₁=yᵢⱼ[1],yᵢⱼ[3]
 

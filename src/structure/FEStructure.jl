@@ -4,6 +4,7 @@ using LinearAlgebra
 
 using HCubature
 
+using ..Quadrature
 using ..FESparse
 using ..Enums
 using ..CoordinateSystem

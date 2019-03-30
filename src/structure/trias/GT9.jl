@@ -107,3 +107,21 @@ function K_GT9(elm::Tria)::Matrix{Float64}
     L=sparse(I,J,1.,9,18)
     return L'*K*L
 end
+
+function M_GT9(elm::Tria)::Matrix{Float64}
+end
+
+# function C_GT9(elm::Tria)::Matrix{Float64}
+# end
+
+function P_GT9(elm::Tria,p::Float64)::Vector{Float64}
+    A=elm.A
+    P=zeros(18)
+    P[3]=P[9]=P[15]=p*A/3
+end
+
+function W_GT9(elm::Tria,u::Vector{Float64})::Vector{Float64}
+end
+
+function f_GT9(elm::Tria,u::Vector{Float64})::Vector{Float64}
+end

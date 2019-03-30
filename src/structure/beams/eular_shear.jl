@@ -80,3 +80,51 @@ function K2_eular_shear(beam::Beam)::Matrix{Float64}
     K*=T/l
     return K
 end
+
+function P_eular_shear(beam::Beam,f::Vector{Float64},ϵ₀::Vector{Float64},)::Vector{Float64}
+    l=beam.l
+    fi,v2i,v3i,ti,m2i,m3i,fj,v2j,v3j,tj,m2j,m3j=f
+    Nᵀf(x)=[
+          0;
+    (1 - 3*x^2 + 2*x^3)*(v2i + x*(-v2i + v2j));
+    (1 - 3*x^2 + 2*x^3)*(v3i + x*(-v3i + v3j));
+          0;
+    l*(x - 2*x^2 + x^3)*(v3i + x*(-v3i + v3j));
+    l*(x - 2*x^2 + x^3)*(v2i + x*(-v2i + v2j));
+          0;
+        (3*x^2 - 2*x^3)*(v2i + x*(-v2i + v2j));
+        (3*x^2 - 2*x^3)*(v3i + x*(-v3i + v3j));
+         0;
+         l*(-x^2 + x^3)*(v3i + x*(-v3i + v3j));
+         l*(-x^2 + x^3)*(v2i + x*(-v2i + v2j));
+   ]*l
+   Nᵀf2(x)=[
+         -0.5*(-1 + x)*(fi + (1+x)/2*(-fi + fj));0;0;
+         -0.5*(-1 + x)*(ti + (1+x)/2*(-ti + tj));0;0;
+           0.5*(1 + x)*(fi + (1+x)/2*(-fi + fj));0;0;
+           0.5*(1 + x)*(ti + (1+x)/2*(-ti + tj));0;0
+    ]*l/2
+
+    Pᵉᶠ=hquadrature(Nᵀf,0,1)[1]+hquadrature(Nᵀf2,-1,1)[1]#Pᵉf=∫NᵀfdV #体积力
+
+    f₁,f₂=ϵ₀[1],ϵ₀[2]
+    BᵀDϵ₀(x)=[-0.5*(f₁+0.5*(x+1)*(-f₁+f₂));
+               0.5*(f₁+0.5*(x+1)*(-f₁+f₂))]*beam.l/2
+    a,b=hquadrature(BᵀDϵ₀,-1,1)[1]*beam.material.E*beam.section.A# Pᵉϵ₀=∫BᵀDϵ₀dV #初应变
+    Pᵉᵋ=[a,0,0,0,0,0,b,0,0,0,0,0]
+    return reshape(Pᵉᶠ+Pᵉᵋ,12)
+end
+
+function f_eular_shear(elm::Beam,uᵉ::Vector{Float64})::Vector{Float64}
+    rDOF=findall(x->x==true,elm.release)
+    Kᵉ=K_eular_shear(elm)
+    K̃ᵉ,P̃ᵉ=static_condensation(K̃ᵉ,zeros(12),rDOF)
+    return K̃ᵉ*uᵉ
+end
+
+function W_eular_shear(elm::Beam,uᵉ::Vector{Float64})::Float64
+    rDOF=findall(x->x==true,elm.release)
+    Kᵉ=K_eular_shear(elm)
+    K̃ᵉ,P̃ᵉ=static_condensation(K̃ᵉ,zeros(12),rDOF)
+    return uᵉ'*(K̃ᵉ*uᵉ)
+end

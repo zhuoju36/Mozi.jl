@@ -22,8 +22,6 @@ function K_TMT(elm::Tria)::Matrix{Float64}
     δ₂=(t/d₂)^2/(5/6*(1-ν₀)+2*(t/d₂)^2)
     δ₃=(t/d₃)^2/(5/6*(1-ν₀)+2*(t/d₃)^2)
 
-
-
     F=-3/2/A*[c₁/l₁^2*(b₂*L₃+b₃*L₂) c₂/l₂^2*(b₃*L₁+b₁*L₃) c₃/l₃^2*(b₁*L₂+b₂*L₁);
              -b₁/l₁^2*(c₂*L₃+c₃*L₂) -b₂/l₂^2*(c₃*L₁+c₁*L₃) -b₃/l₃^2*(c₁*L₂+c₂*L₁);
              M₁ M₂ M₃]
@@ -91,4 +89,20 @@ function K_TMT(elm::Tria)::Matrix{Float64}
     J=[3,4,5,9,10,11,15,16,17]
     L=sparse(I,J,1.,9,18)
     return L'*K*L
+end
+
+function M_TMT(elm::Tria)::Matrix{Float64}
+    return M_GT9(elm)
+end
+
+# function C_TMT(elm::Tria)::Matrix{Float64}
+# end
+
+function P_TMT(elm::Tria,p::Vector{Float64})::Vector{Float64}
+end
+
+function W_TMT(elm::Tria,u::Vector{Float64})::Vector{Float64}
+end
+
+function f_TMT(elm::Tria,u::Vector{Float64})::Vector{Float64}
 end

@@ -54,14 +54,14 @@ function integrateK(elm::Tria)
         return K_GT9(elm)
     elseif elm.elm_type=="TMT"
         return K_TMT(elm)
-    # elseif elm.elm_type=="DKT"
-    #     K=K_DKT(elm)
-    # elseif elm.elm_type=="DKGT"
-    #     K=K_DKGT(elm)
+    elseif elm.elm_type=="DKT"
+        K=K_DKT(elm)
+    elseif elm.elm_type=="DKGT"
+        K=K_DKGT(elm)
     elseif elm.elm_type=="TMGT"
         return K_TMGT(elm)
     else
-        throw("Quad element type error!")
+        throw("Tria element type error!")
     end
 end
 
@@ -121,54 +121,44 @@ function integrateKu(elm::Tria,u)
     T̄ᵉ[7:8,7:8]=V
 end
 
-function integrateM!(elm::Tria)
-    membrane,bending=elm.membrane,elm.bending
+function integrateM(elm::Tria)
     ρ=elm.material.ρ
-    center=elm.center
     t=elm.t
     A=elm.A
-    T=elm.T[1:3,1:3]
-    x₁,y₁,z₁=T*(elm.node1.loc-center)
-    x₂,y₂,z₂=T*(elm.node2.loc-center)
-    x₃,y₃,z₃=T*(elm.node3.loc-center)
-    # M=Matrix{Float64}(ρ*t*A/18,18,18)
-    M=spzeros(18,18)
-    elm.Mᵉ=M
+    if elm.mass_type=="concentrate"
+        return ρ*t*A/3*Matrix(1.0I,18,18)
+    end
+    if elm.elm_type=="GT9"
+        return M_GT9(elm)
+    elseif elm.elm_type=="TMT"
+        return M_TMT(elm)
+    elseif elm.elm_type=="TMGT"
+        return M_TMGT(elm)
+    elseif elm.elm_type=="DKT"
+        return M_DKT(elm)
+    elseif elm.elm_type=="DKGT"
+        return M_DKGT(elm)
+    else
+        throw("Tria element type error!")
+    end
 end
 
-function integrateP(elm::Tria,elm_force)
-    N=elm.N
-    B=elm.B
-    D=elm.D
-    J=elm.J
-
-    f,s,σ₀,ϵ₀=elmforce.f,elmforce.s,elmforce.σ₀,elmforce.ϵ₀
-    a=[-1 -1]
-    b=[1 1]
-
-    function f1(x)
-        N'*f*det(J)
+function integrateP(elm::Tria,elm_force::TriaForce)
+    p₁,p₂,p₃=elm_force.f
+    ϵ₀=elm_force.ϵ₀
+    if elm.elm_type=="GT9"
+        return P_GT9(elm,[p₁;p₂],ϵ₀)
+    elseif elm.elm_type=="TMT"
+        return P_TMT(elm,p₃)
+    elseif elm.elm_type=="TMGT"
+        return P_TMGT(elm,elm_force,elm_force.f)
+    elseif elm.elm_type=="DKT"
+        return P_DKT(elm,,p₃)
+    elseif elm.elm_type=="DKGT"
+        return P_DKGT(elm,elm_force,elm_force.f)
+    else
+        throw("Tria element type error!")
     end
-
-    function f2(x)
-        N'*s*det(J)
-    end
-
-    function f3(x)
-        x->B'*σ₀*det(J)
-    end
-
-    function f4(x)
-        x->B'*D*ϵ₀*det(J)
-    end
-
-    Pᵉ_f=hquadrature(f1,a,b)
-    Pᵉ_s=hquadrature(f2,[-1],[1])#ξ=-1
-    Pᵉ_σ₀=hquadrature(f3,a,b)
-    Pᵉ_ϵ₀=hquadrature(f4,a,b)
-
-    Pᵉ_f,Pᵉ_s,Pᵉ_σ₀,Pᵉ_ϵ₀=calc_force(elm,elm_force) #Pᵉ=Pᵉf+Pᵉs+Pᵉσ₀+Pᵉϵ₀
-    Pᵉ=Pᵉ_f+Pᵉ_s+Pᵉ_σ₀+Pᵉ_ϵ₀
 end
 
 # end
