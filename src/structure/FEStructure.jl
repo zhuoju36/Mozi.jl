@@ -36,8 +36,6 @@ mutable struct Structure
     sections::Dict{String,BeamSection}
 
     nodes::Dict{String,Node}
-    links::Array
-    cables::Array
     beams::Dict{String,Beam}
     quads::Dict{String,Quad}
     trias::Dict{String,Tria}
@@ -46,12 +44,12 @@ mutable struct Structure
     ζ₁::Float64
     ζ₂::Float64
 
-    K::SparseMatrixCSC
-    K̄::SparseMatrixCSC
-    M::SparseMatrixCSC
-    M̄::SparseMatrixCSC
-    C::SparseMatrixCSC
-    C̄::SparseMatrixCSC
+    K::SparseMatrixCSC{Float64,Int64}
+    K̄::SparseMatrixCSC{Float64,Int64}
+    M::SparseMatrixCSC{Float64,Int64}
+    M̄::SparseMatrixCSC{Float64,Int64}
+    C::SparseMatrixCSC{Float64,Int64}
+    C̄::SparseMatrixCSC{Float64,Int64}
 end
 
 function Structure()
@@ -62,7 +60,7 @@ function Structure()
     M̄=spzeros(1,1)
     C=spzeros(1,1)
     C̄=spzeros(1,1)
-    Structure(Dict("Global"=>globalcsys),Dict{String,Material}(),Dict{String,BeamSection}(),Dict{String,Node}(),[],[],
+    Structure(Dict("Global"=>globalcsys),Dict{String,Material}(),Dict{String,BeamSection}(),Dict{String,Node}(),
     Dict{String,Beam}(),Dict{String,Quad}(),Dict{String,Tria}(),"constant",0.05,0,K,K̄,M,M̄,C,C̄)
 end
 

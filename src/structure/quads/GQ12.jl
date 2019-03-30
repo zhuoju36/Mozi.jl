@@ -107,6 +107,60 @@ function K_GQ12(elm::Quad)::Matrix{Float64}
     return L'*K*L
 end
 
-function P_GQ12(elm::Quad)::Vector{Float64}
-    return zeros(12)
+function Pf_GQ12(elm::Quad,f::Vector{Float64})::Vector{Float64}
+    t=elm.t
+    T=elm.T[1:3,1:3]
+    x₁,y₁,z₁=T*(elm.node1.loc.-center)
+    x₂,y₂,z₂=T*(elm.node2.loc.-center)
+    x₃,y₃,z₃=T*(elm.node3.loc.-center)
+    x₄,y₄,z₄=T*(elm.node4.loc.-center)
+    function A(x)
+        ξ₁,η₁=-1,-1
+        ξ₂,η₂=1,-1
+        ξ₃,η₃=1,1
+        ξ₄,η₄=-1,1
+        ξᵢ=[ξ₁,ξ₂,ξ₃,ξ₄]
+        ηᵢ=[η₁,η₂,η₃,η₄]
+        Nᵢ=1/4*(1 .+ ξᵢ*ξ).*(1 .+ ηᵢ*η)
+        N=Array{Float}(undef,2,8)
+        for i in 1:4
+            N[:,2i-1]=[Nᵢ[i],0]
+            N[:,2i]=[0,Nᵢ[i]]
+        end
+        J[1,1]=-0.25*(1 - η)*x₁ + 0.25*(1 - η)*x₂ + 0.25*(1 + η)*x₃ - 0.25*(1 + η)*x₄
+        J[1,2]=-0.25*(1 - η)*y₁ + 0.25*(1 - η)*y₂ + 0.25*(1 + η)*y₃ - 0.25*(1 + η)*y₄
+        J[2,1]=-0.25*(1 - ξ)*x₁ + 0.25*(1 - ξ)*x₄ - 0.25*(1 + ξ)*x₂ + 0.25*(1 + ξ)*x₃
+        J[2,2]=-0.25*(1 - ξ)*y₁ + 0.25*(1 - ξ)*y₄ - 0.25*(1 + ξ)*y₂ + 0.25*(1 + ξ)*y₃
+        return N'*f*det(J)*t
+    end
+    hcubature(A,[-1,-1],[1,1])[1]
+end
+
+function Pf_GQ12(elm::Quad,f::Vector{Float64})::Vector{Float64}
+    t=elm.t
+    T=elm.T[1:3,1:3]
+    x₁,y₁,z₁=T*(elm.node1.loc.-center)
+    x₂,y₂,z₂=T*(elm.node2.loc.-center)
+    x₃,y₃,z₃=T*(elm.node3.loc.-center)
+    x₄,y₄,z₄=T*(elm.node4.loc.-center)
+    function A(x)
+        ξ₁,η₁=-1,-1
+        ξ₂,η₂=1,-1
+        ξ₃,η₃=1,1
+        ξ₄,η₄=-1,1
+        ξᵢ=[ξ₁,ξ₂,ξ₃,ξ₄]
+        ηᵢ=[η₁,η₂,η₃,η₄]
+        Nᵢ=1/4*(1 .+ ξᵢ*ξ).*(1 .+ ηᵢ*η)
+        N=Array{Float}(undef,2,8)
+        for i in 1:4
+            N[:,2i-1]=[Nᵢ[i],0]
+            N[:,2i]=[0,Nᵢ[i]]
+        end
+        J[1,1]=-0.25*(1 - η)*x₁ + 0.25*(1 - η)*x₂ + 0.25*(1 + η)*x₃ - 0.25*(1 + η)*x₄
+        J[1,2]=-0.25*(1 - η)*y₁ + 0.25*(1 - η)*y₂ + 0.25*(1 + η)*y₃ - 0.25*(1 + η)*y₄
+        J[2,1]=-0.25*(1 - ξ)*x₁ + 0.25*(1 - ξ)*x₄ - 0.25*(1 + ξ)*x₂ + 0.25*(1 + ξ)*x₃
+        J[2,2]=-0.25*(1 - ξ)*y₁ + 0.25*(1 - ξ)*y₄ - 0.25*(1 + ξ)*y₂ + 0.25*(1 + ξ)*y₃
+        return N'*f*det(J)*t
+    end
+    hcubature(A,[-1,-1],[1,1])[1]
 end

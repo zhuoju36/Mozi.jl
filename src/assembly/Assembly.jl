@@ -21,14 +21,14 @@ mutable struct Assembly
     structure::Structure
     lcset::LoadCaseSet
 
-    node_count::Int
-    beam_count::Int
-    quad_count::Int
-    tria_count::Int
+    node_count::Int64
+    beam_count::Int64
+    quad_count::Int64
+    tria_count::Int64
 
-    nDOF::Int
-    nfreeDOF::Int
-    restrainedDOFs::Vector{Int}
+    nDOF::Int64
+    nfreeDOF::Int64
+    restrainedDOFs::Vector{Int64}
 
     lc_tree::LCNode
     working_path::String
@@ -57,7 +57,7 @@ function disperse(A::Matrix,i::Vector{Int},N::Int)
     SparseMatrixCOO(N,N,I,J,V)
 end
 
-function disperse(A::Vector,i::Vector{Int},N::Int)
+function disperse(A::Vector,i::Vector{Int64},N::Int64)
     m=length(A)
     I = i
     J = [1 for i in 1:m]
@@ -91,6 +91,13 @@ function disperse_idx(elm::Tria)
     [6i-5:6i;6j-5:6j;6k-5:6k]
 end
 
+function appendcoo!(a::SparseMatrixCOO,b::SparseMatrixCOO)
+    append!(a.rowptr,b.rowptr)
+    append!(a.colptr,b.colptr)
+    append!(a.nzval,b.nzval)
+    return a
+end
+
 assembleK(elm,N)=disperse(elm.T'*integrateK(elm)*elm.T,disperse_idx(elm),N)
 assembleM(elm,N)=disperse(elm.T'*integrateM(elm)*elm.T,disperse_idx(elm),N)
 
@@ -117,11 +124,8 @@ function assemble!(structure,lcset;mass_source="weight",mass_cases=[],mass_cases
     tria_count=length(structure.trias)
 
     K=spzeros_coo(nDOF,nDOF)
-    K̄=spzeros(nDOF,nDOF)
     M=spzeros_coo(nDOF,nDOF)
-    M̄=spzeros(nDOF,nDOF)
     C=sparse(0.02*I,nDOF,nDOF)
-    C̄=sparse(0.02*I,nDOF,nDOF)
 
     lc_tree=LCNode("root",[])
     lcs=merge(lcset.statics,lcset.modals,lcset.bucklings,lcset.time_histories,lcset.response_spectrums)
@@ -183,29 +187,29 @@ function assemble!(structure,lcset;mass_source="weight",mass_cases=[],mass_cases
 
 @time begin
     if node_count>0
-        K+=reduce(+,assembleK.(values(structure.nodes),nDOF))
-        M+=reduce(+,assembleM.(values(structure.nodes),nDOF))
+        K=reduce(appendcoo!,assembleK.(values(structure.nodes),nDOF))
+        M=reduce(appendcoo!,assembleM.(values(structure.nodes),nDOF))
     end
 end
 
 @time begin
     if beam_count>0
-        K+=reduce(+,assembleK.(values(structure.beams),nDOF))
-        M+=reduce(+,assembleM.(values(structure.beams),nDOF))
+        K=reduce(appendcoo!,assembleK.(values(structure.beams),nDOF))
+        M=reduce(appendcoo!,assembleM.(values(structure.beams),nDOF))
     end
 end
 
 @time begin
     if quad_count>0
-        K+=reduce(+,assembleK.(values(structure.quads),nDOF))
-        M+=reduce(+,assembleM.(values(structure.quads),nDOF))
+        K=reduce(appendcoo!,assembleK.(values(structure.quads),nDOF))
+        M=reduce(appendcoo!,assembleM.(values(structure.quads),nDOF))
     end
 end
 
 @time begin
     if tria_count>0
-        K+=reduce(+,assembleK.(values(structure.trias),nDOF))
-        M+=reduce(+,assembleM.(values(structure.trias),nDOF))
+        K=reduce(appendcoo!,assembleK.(values(structure.trias),nDOF))
+        M=reduce(appendcoo!,assembleM.(values(structure.trias),nDOF))
     end
 end
 

@@ -5,13 +5,13 @@ export SparseMatrixCOO,SparseMatrixDOK
 export spzeros_coo,spzeros_dok
 export to_csc, to_array
 
-mutable struct SparseMatrixDOK{Tv,Ti<:Integer} <: AbstractSparseMatrix{Tv,Ti}
+struct SparseMatrixDOK{Tv,Ti<:Integer} <: AbstractSparseMatrix{Tv,Ti}
     m::Int
     n::Int
     dict::Dict{Tuple{Ti,Ti},Tv}
 end
 
-mutable struct SparseMatrixCOO{Tv,Ti<:Integer} <: AbstractSparseMatrix{Tv,Ti}
+struct SparseMatrixCOO{Tv,Ti<:Integer} <: AbstractSparseMatrix{Tv,Ti}
     m::Int
     n::Int
     rowptr::Vector{Ti}

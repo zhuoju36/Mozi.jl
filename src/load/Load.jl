@@ -38,7 +38,7 @@ mutable struct QuadForce  <: AbstractElementForce
     s::Vector{Float64}
     σ₀::Vector{Float64}
     ϵ₀::Vector{Float64}
-    QuadForce(id)=new(id,zeros(24,1),zeros(24,1),zeros(4,1),zeros(4,1))
+    QuadForce(id)=new(id,zeros(24),zeros(24),zeros(4),zeros(4))
 end
 
 end

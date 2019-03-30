@@ -33,12 +33,19 @@ for node in values(st.nodes)
 end
 
 add_static_case!(lcset,"DL",1.0)
+for node in values(st.nodes)
+    if abs(node.loc[2]-3.81)<1e-3 && abs(node.loc[3]-3.81)<1e-3
+        add_nodal_force!(lcset,"DL",node.id,0,0,-1e6,0,0,0)
+    end
+end
 
 @time begin
 assembly=assemble!(st,lcset)
 end
 
+@time begin
 solve(assembly)
+end
 
 for node in values(st.nodes)
     if abs(node.loc[2]-3.81)<1e-3 && abs(node.loc[3]-3.81)<1e-3

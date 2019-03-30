@@ -22,13 +22,13 @@ end
 
 # include("./sparse/sparse_test.jl")
 
-# include("./beams/element_test.jl")
-include("./quads/element_test.jl")
+include("./beams/element_test.jl")
+# include("./quads/element_test.jl")
 # include("./trias/element_test.jl")
 
-include("./static_cantilever.jl")
-include("./dynamic_cantilever.jl")
-include("./buckling_cantilever.jl")
+# include("./static_cantilever.jl")
+# include("./dynamic_cantilever.jl")
+# include("./buckling_cantilever.jl")
 
 # include("./static_quad.jl")
 # include("./dynamic_quad.jl")
