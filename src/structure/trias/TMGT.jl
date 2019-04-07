@@ -3,11 +3,16 @@ function K_TMGT(elm::Tria)::Matrix{Float64}
 end
 
 function M_TMGT(elm::Tria)::Matrix{Float64}
-    return M_GT9(elm)
+    ρ=elm.material.ρ
+    A=elm.A
+    t=elm.t
+    W=ρ*A*t
+    M=zeros(18,18)
+    for i in [1,2,3,7,8,9,13,14,15]
+        M[i,i]=W/9
+    end
+    return M
 end
-
-# function C_TMGT(elm::Tria)::Matrix{Float64}
-# end
 
 function P_TMGT(elm::Tria,p::Vector{Float64})::Vector{Float64}
 end

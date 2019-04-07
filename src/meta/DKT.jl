@@ -37,6 +37,7 @@ Hʸ=Array{Basic}(undef,9,1)
 ξᵢ=[1,-1,-1,1]
 ηᵢ=[1,1,-1,-1]
 ξ,η=symbols("ξ η")
+Nᵢ=Array{Basic}(undef,6,1)
 Nᵢ[1]=2*(1-ξ-η)*(0.5-ξ-η)
 Nᵢ[2]=ξ*(2ξ-1)
 Nᵢ[3]=η*(2η-1)
@@ -74,6 +75,12 @@ dHʸdη=diff.(Hʸ,η)
 @show dHˣdη
 @show dHʸdξ
 @show dHʸdη
+open("./k_DKT.jl","w+") do f
+  write(f,"dHˣdξ="*string(dHˣdξ)*"\n")
+  write(f,"dHˣdη="*string(dHˣdη)*"\n")
+  write(f,"dHʸdξ="*string(dHʸdξ)*"\n")
+  write(f,"dHʸdη="*string(dHʸdη)*"\n")
+end
 
 x₁₂,x₃₁=xᵢⱼ[1],xᵢⱼ[3]
 y₁₂,y₃₁=yᵢⱼ[1],yᵢⱼ[3]
@@ -85,14 +92,14 @@ B=[y₃₁*transpose(dHˣdξ)+y₁₂*transpose(dHˣdη);
 
 K=transpose(B)*D*B
 
-open("./k_DKT.jl","w+") do f
-  for i in 1:size(K,1)
-      for j in i:size(K,2)
-          if i==j
-              write(f,"K["*string(i)*","*string(j)*"]="*string(K[i,j])*"\n")
-          elseif string(K[i,j])!="0"
-              write(f,"K["*string(i)*","*string(j)*"]="*"K["*string(j)*","*string(i)*"]="*string(K[i,j])*"\n")
-          end
-      end
-  end
-end
+# open("./k_DKT.jl","w+") do f
+#   for i in 1:size(K,1)
+#       for j in i:size(K,2)
+#           if i==j
+#               write(f,"K["*string(i)*","*string(j)*"]="*string(K[i,j])*"\n")
+#           elseif string(K[i,j])!="0"
+#               write(f,"K["*string(i)*","*string(j)*"]="*"K["*string(j)*","*string(i)*"]="*string(K[i,j])*"\n")
+#           end
+#       end
+#   end
+# end

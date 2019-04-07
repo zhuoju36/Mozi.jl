@@ -92,13 +92,21 @@ function K_TMT(elm::Tria)::Matrix{Float64}
 end
 
 function M_TMT(elm::Tria)::Matrix{Float64}
-    return M_GT9(elm)
+    ρ=elm.material.ρ
+    A=elm.A
+    t=elm.t
+    W=ρ*A*t
+    M=zeros(18,18)
+    for i in [1,2,3,7,8,9,13,14,15]
+        M[i,i]=W/9
+    end
+    return M
 end
 
-# function C_TMT(elm::Tria)::Matrix{Float64}
-# end
-
 function P_TMT(elm::Tria,p::Vector{Float64})::Vector{Float64}
+    A=elm.A
+    P=zeros(18)
+    P[3]=P[9]=P[15]=p*A/3
 end
 
 function W_TMT(elm::Tria,u::Vector{Float64})::Vector{Float64}

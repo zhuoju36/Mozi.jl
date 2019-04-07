@@ -143,7 +143,7 @@ function integrateM(elm::Tria)
     end
 end
 
-function integrateP(elm::Tria,elm_force::TriaForce)
+function integrateP(elm::Tria,elm_force)
     p₁,p₂,p₃=elm_force.f
     ϵ₀=elm_force.ϵ₀
     if elm.elm_type=="GT9"
@@ -153,7 +153,7 @@ function integrateP(elm::Tria,elm_force::TriaForce)
     elseif elm.elm_type=="TMGT"
         return P_TMGT(elm,elm_force,elm_force.f)
     elseif elm.elm_type=="DKT"
-        return P_DKT(elm,,p₃)
+        return P_DKT(elm,p₃)
     elseif elm.elm_type=="DKGT"
         return P_DKGT(elm,elm_force,elm_force.f)
     else

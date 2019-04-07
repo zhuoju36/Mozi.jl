@@ -109,10 +109,16 @@ function K_GT9(elm::Tria)::Matrix{Float64}
 end
 
 function M_GT9(elm::Tria)::Matrix{Float64}
+    ρ=elm.material.ρ
+    A=elm.A
+    t=elm.t
+    W=ρ*A*t
+    M=zeros(18,18)
+    for i in [1,2,7,8,13,14]
+        M[i,i]=W/6
+    end
+    return M
 end
-
-# function C_GT9(elm::Tria)::Matrix{Float64}
-# end
 
 function P_GT9(elm::Tria,p::Float64)::Vector{Float64}
     A=elm.A
