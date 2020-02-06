@@ -50,9 +50,9 @@ function integrateK(beam::Beam)::Matrix{Float64}
     end
 end
 
-function integrateKσ(beam::Beam,σ::Vector{Float64})::Matrix{Float64}
+function integrateKσ(beam::Beam,d::Vector{Float64})::Matrix{Float64}
     if beam.elm_type=="eular_shear"
-        return K2_eular_shear(beam::Beam)
+        return K2_eular_shear(beam::Beam,d)
     end
 end
 

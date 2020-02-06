@@ -18,36 +18,56 @@ macro showbanner(word,total=99)
     println()
 end
 
+@info "---------- P-Δ test ----------"
 st=Structure()
-add_uniaxial_metal!(st,"steel",2e11,0.2,7849.0474)
-add_general_section!(st,"frame",4.26e-3,3.301e-6,6.572e-5,9.651e-8,1e-3,1e-3,0,0)
-
-N=8
-for i in 0:N
-    add_node!(st,i,0,0,10i/N)
-end
-
-for i in 0:N-1
-    add_beam!(st,i,i,i+1,"steel","frame")
-end
-
-set_nodal_restraint!(st,0,true,true,true,true,true,true)
-
-
 lcset=LoadCaseSet()
 
-add_static_case!(lcset,"DL",1.)
-add_nodal_force!(lcset,"DL",N,0,0,-1,0,0,0)
+add_uniaxial_metal!(st,"steel",2e11,0.2,7849.0474)
+add_uniaxial_metal!(st,"cable",1.9e11,0.3,7849.0474)
 
-@time begin
+add_beam_section!(st,"frame",3,1500,3000,20,30)
+add_beam_section!(st,"string",5,60)
+
+add_node!(st,1,0,0,0)
+add_node!(st,2,0,0,1)
+add_node!(st,3,1,0,0)
+add_node!(st,4,0,1,0)
+add_node!(st,5,-1,0,0)
+add_node!(st,6,0,-1,0)
+
+add_beam!(st,"b1",1,2,"steel","frame")
+add_beam!(st,"c1",3,2,"cable","string")
+add_beam!(st,"c2",4,2,"cable","string")
+add_beam!(st,"c3",5,2,"cable","string")
+add_beam!(st,"c4",6,2,"cable","string")
+
+# set_beam_release!(st,"c1",false,false,false,false,true,true,false,false,false,false,true,true)
+# set_beam_release!(st,"c2",false,false,false,false,true,true,false,false,false,false,true,true)
+# set_beam_release!(st,"c3",false,false,false,false,true,true,false,false,false,false,true,true)
+# set_beam_release!(st,"c4",false,false,false,false,true,true,false,false,false,false,true,true)
+
+set_nodal_restraint!(st,1,true,true,true,true,true,true)
+set_nodal_restraint!(st,3,true,true,true,true,true,true)
+set_nodal_restraint!(st,4,true,true,true,true,true,true)
+set_nodal_restraint!(st,5,true,true,true,true,true,true)
+set_nodal_restraint!(st,6,true,true,true,true,true,true)
+
+
+add_static_case!(lcset,"D",0)
+add_static_case!(lcset,"D>P",0,nl_type="2nd",plc="D")
+add_static_case!(lcset,"D>P>L",0,nl_type="2nd",plc="D>P")
+
+add_beam_strain!(lcset,"D","c1",-0.03)
+add_beam_strain!(lcset,"D","c2",-0.03)
+add_beam_strain!(lcset,"D","c3",-0.03)
+add_beam_strain!(lcset,"D","c4",-0.03)
+
+# add_nodal_force!(lcset,"D",2,0,0,-1e6,0,0,0)
+
 assembly=assemble!(st,lcset,path=PATH)
-end
-
-@time begin
 solve(assembly)
-end
 
-r=result_nodal_reaction(assembly,"DL",0)
-@test r≈[-2.83076e-10,-9.04954e-10,8926.15,53556.9,-80335.3,-3.29473e-8] rtol=1e-2
-r=result_nodal_displacement(assembly,"DL",N)
-@test r≈[0.454025, 0.302683, -0.98385, -0.0336002, 0.0504003, -5.77725e-13] rtol=1e-2
+r=result_nodal_displacement(assembly,"D",2)
+# r=result_nodal_displacement(assembly,"D>P",2)
+# r=result_nodal_displacement(assembly,"D>P>L",2)
+println(r)

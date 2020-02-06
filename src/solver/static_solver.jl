@@ -44,15 +44,12 @@ function K₂(structure::Structure,d₀::Vector{Float64})::SparseMatrixCSC{Float
 
         T=sparse(elm.T)
         dᵉ=T*[d₀[i*6-5:i*6];d₀[j*6-5:j*6]]
-        # Kᵉ=integrateK!(elm)
-        # σ=(Kᵉ*dᵉ)[1]
-        Kᵢᵉ=elm.Kᵉ
-        σ=(Kᵢᵉ*dᵉ)[1]
-        Kᵉ=sparse(Kᵢᵉ)+integrateKσ(elm,σ)
+        Kᵢᵉ=integrateK(elm)
+        Kᵉ=sparse(Kᵢᵉ)+integrateKσ(elm,dᵉ)
         A=T*G
         rDOF=findall(x->x==true,elm.release)
         if length(rDOF)!=0
-            K̄ᵉ,P̄ᵉ=FEStructure.FEBeam.static_condensation(Array(Kᵉ),zeros(12),rDOF)
+            K̄ᵉ,P̄ᵉ=static_condensation(Array(Kᵉ),zeros(12),rDOF)
             K+=A'*K̄ᵉ*A
         else
             K+=A'*Kᵉ*A

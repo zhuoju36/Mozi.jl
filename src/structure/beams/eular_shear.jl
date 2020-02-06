@@ -40,12 +40,12 @@ function K_eular_shear(beam::Beam)::Matrix{Float64}
     return K
 end
 
-function K2_eular_shear(beam::Beam)::Matrix{Float64}
+function K2_eular_shear(beam::Beam,u::Vector{Float64})::Matrix{Float64}
     E,ν=beam.material.E,beam.material.ν
     A,I₂,I₃,J,l=beam.section.A,beam.section.I₂,beam.section.I₃,beam.section.J,beam.l
     As₂,As₃=beam.section.As₂,beam.section.As₃
     G=E/2/(1+ν)
-    T=σ*A
+    T=E*A*(u[7]-u[1])/l
     ϕ₂,ϕ₃=12E*I₃/(G*As₂*l^2),12E*I₂/(G*As₃*l^2)
     K=zeros(12,12)
 

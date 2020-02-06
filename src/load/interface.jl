@@ -282,8 +282,8 @@ function add_beam_strain!(lcset::LoadCaseSet,lc,id,val)
         beam_force.ϵ₀[2]=val
         lcset.statics[lc].beam_forces[id]=beam_force
     else
-        lcset.statics[lc].beam_forces[id].s[1]+=val
-        lcset.statics[lc].beam_forces[id].s[7]+=val
+        lcset.statics[lc].beam_forces[id].ϵ₀[1]+=val
+        lcset.statics[lc].beam_forces[id].ϵ₀[2]+=val
     end
 end
 

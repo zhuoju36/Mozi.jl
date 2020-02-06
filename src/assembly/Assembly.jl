@@ -89,7 +89,7 @@ function disperse(A::Vector,i::Vector{Int},N::Int)
     # I = i
     # J = [1 for i in 1:m]
     # V = A
-    SparseVector(N,i,A)
+    dropzeros!(SparseVector(N,i,A))
 end
 
 function appendcoo!(a::SparseMatrixCOO,b::SparseMatrixCOO)
@@ -206,31 +206,6 @@ function assemble!(structure,lcset;mass_source="weight",mass_cases=[],mass_cases
     sort!(restrainedDOFs)
     mask=[(i in restrainedDOFs) ? false : true for i in 1:nDOF]
 
-    # for elm in values(structure.beams)
-    #     i = elm.node1.hid
-    #     j = elm.node2.hid
-    #     T=sparse(elm.T)
-    #
-    #     I=collect(1:12)
-    #     J=[6i-5:6i;6j-5:6j]
-    #     G=sparse(I,J,1.0,12,nDOF)
-    #
-    #     Kᵉ=integrateK!(elm)
-    #     Mᵉ=integrateM!(elm)
-    #
-    #     A=T*G
-    #
-    #     rDOF=findall(x->x==true,elm.release)
-    #     if length(rDOF)!=0
-    #         K̄ᵉ,P̄ᵉ=FEStructure.FEBeam.static_condensation(Array(elm.Kᵉ),elm.Pᵉ,rDOF)
-    #         K̄ᵉ=sparse(K̄ᵉ)
-    #         K+=A'*K̄ᵉ*A
-    #     else
-    #         K+=A'*Kᵉ*A
-    #     end
-    #     M+=A'*Mᵉ*A
-    # end
-
 @time begin
     if node_count>0
         K=reduce(appendcoo!,assembleK.(values(structure.nodes),nDOF))
@@ -289,36 +264,30 @@ end
             P.+=Pg*loadcase.gfactor
         end
 
-
-        # @show collect(values(loadcase.beam_forces))
-        # P+=reduce(+,assembleP.(getvalues(structure.beams,getproperty.(values(loadcase.beam_forces),:id)),nDOF,values(loadcase.beam_forces)))
-        # P+=reduce(+,assembleP.(getvalues(structure.nodes,getproperty.(values(loadcase.nodal_forces),:id)),nDOF,values(loadcase.nodal_forces)))
-
-        # P+=reduce(+,assembleP.(get.(structure.beams,getproperty.(values(loadcase.beam_forces),:id)),nDOF,values(loadcase.beam_forces)))
-        # P+=reduce(+,assembleP.(get.(structure.nodes,getproperty.(values(loadcase.nodal_forces),:id)),nDOF,values(loadcase.nodal_forces)))
-
-        # for load in values(loadcase.beam_forces)
-        #     elm=structure.beams[load.id]
-        #     Kᵉ=integrateK(elm)
-        #     Pᵉ=integrateP(elm,load)
-        #     rDOF=findall(x->x==true,elm.release)
-        #     K̃ᵉ,P̃ᵉ=FEStructure.static_condensation(Kᵉ,Pᵉ,rDOF)
-        #     idx=idxmap(elm)
-        #     P+=disperse(reshape(elm.T'*P̃ᵉ,12),idx,nDOF)
-        # end
-        # for load in values(loadcase.nodal_forces)
-        #     node=structure.nodes[load.id]
-        #     Pⁿ=reshape(node.T'*load.val,6)
-        #     idx=idxmap(node)
-        #     P+=disperse(Pⁿ,idx,nDOF)
-        # end
+        for load in values(loadcase.beam_forces)
+            elm=structure.beams[load.id]
+            Kᵉ=integrateK(elm)
+            Pᵉ=integrateP(elm,load)
+            rDOF=findall(x->x==true,elm.release)
+            K̃ᵉ,P̃ᵉ=FEStructure.static_condensation(Kᵉ,Pᵉ,rDOF)
+            idx=idxmap(elm)
+            P+=Array(disperse(reshape(elm.T'*P̃ᵉ,12),idx,nDOF))
+            # println(P)
+            # println("///")
+        end
+        for load in values(loadcase.nodal_forces)
+            node=structure.nodes[load.id]
+            Pⁿ=reshape(node.T'*load.val,6)
+            idx=idxmap(node)
+            P+=Array(disperse(Pⁿ,idx,nDOF))
+        end
         cases[l].P=P
     end
 
     if mass_source=="weight"
         structure.M=to_csc(M)
     elseif mass_source=="loadcases"
-        M=zero(M)
+        M=spzeros_coo(nDOF,nDOF)
         for (lc,fac) in (mass_cases, mass_case_factors)
             M+=Diagonal(lcset.statics[lc].P)*fac
         end

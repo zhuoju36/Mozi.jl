@@ -28,7 +28,7 @@ add_tria!,set_tria_rotation!,
 
 set_damp_constant!,set_damp_Rayleigh!,
 integrateK,integrateM,integrateP,
-integrateKσ
+integrateKσ,static_condensation
 
 mutable struct Structure
     csyses::Dict{String,CSys}
