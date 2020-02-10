@@ -214,6 +214,7 @@ function assemble!(structure,lcset;mass_source="weight",mass_cases=[],mass_cases
 end
 
 @time begin
+    #static condensation should also be considered
     if beam_count>0
         K=reduce(appendcoo!,assembleK.(values(structure.beams),nDOF))
         M=reduce(appendcoo!,assembleM.(values(structure.beams),nDOF))
@@ -272,8 +273,6 @@ end
             K̃ᵉ,P̃ᵉ=FEStructure.static_condensation(Kᵉ,Pᵉ,rDOF)
             idx=idxmap(elm)
             P+=Array(disperse(reshape(elm.T'*P̃ᵉ,12),idx,nDOF))
-            # println(P)
-            # println("///")
         end
         for load in values(loadcase.nodal_forces)
             node=structure.nodes[load.id]
